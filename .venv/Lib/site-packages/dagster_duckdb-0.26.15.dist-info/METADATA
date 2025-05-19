@@ -1,0 +1,30 @@
+Metadata-Version: 2.4
+Name: dagster-duckdb
+Version: 0.26.15
+Summary: Package for DuckDB-specific Dagster framework op and resource components.
+Home-page: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-duckb
+Author: Dagster Labs
+Author-email: hello@dagsterlabs.com
+License: Apache-2.0
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.9,<3.13
+License-File: LICENSE
+Requires-Dist: duckdb
+Requires-Dist: dagster==1.10.15
+Provides-Extra: pandas
+Requires-Dist: pandas; extra == "pandas"
+Provides-Extra: pyspark
+Requires-Dist: pyspark>=3; extra == "pyspark"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: home-page
+Dynamic: license
+Dynamic: license-file
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

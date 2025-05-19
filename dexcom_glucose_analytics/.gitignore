@@ -1,0 +1,24 @@
+# dbt build artifacts and logs
+target/
+dbt_packages/
+logs/
+
+# DuckDB database file
+dbt_duckdb.db
+
+# Exported data files
+data/
+
+# Python virtual environment
+.venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Log and backup files
+*.log
+*.bak
+
+# Environment variables
+.env
