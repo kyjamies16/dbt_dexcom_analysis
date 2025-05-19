@@ -22,7 +22,7 @@ clean-targets: # directories to be removed by `dbt clean`
   - "dbt_packages"
 
 vars:
-  tconnect_csv_path: "C:/Users/krjam/dexcom/backfill_logs/*.csv"
+  tconnect_csv_path: "C:/Users/krjam/dexcom/seeds/data/*.csv"
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
