@@ -1,6 +1,0 @@
-dexcom_glucose_analytics:
-  target: dev
-  outputs:
-    dev:
-      type: duckdb
-      path: dbt_duckdb.db
