@@ -1,7 +1,0 @@
-2025-05-17 15:39:41,363 - INFO - \u2705 Inserted new reading: {'reading_ts': Timestamp('2025-05-17 15:39:04.110000-0500', tz='UTC-05:00'), 'glucose_mg_dl': 128, 'trend': '\u2192'}
-2025-05-17 19:55:04,742 - ERROR - \u274c Failed to fetch glucose reading from Dexcom API
-Traceback (most recent call last):
-  File "C:\Users\krjam\dexcom\dexcom_glucose_analytics\scripts\stg_pydex_readings.py", line 46, in <module>
-    con.execute("INSERT INTO stg_pydex_readings SELECT * FROM df")
-duckdb.duckdb.BinderException: Binder Error: table stg_pydex_readings has 3 columns but 2 values were supplied
-2025-05-17 21:22:31,227 - INFO - \u2705 Inserted new reading: {'reading_ts': Timestamp('2025-05-17 21:19:04.484000-0500', tz='UTC-05:00'), 'glucose_mg_dl': 126}

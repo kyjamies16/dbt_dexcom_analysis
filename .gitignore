@@ -1,0 +1,35 @@
+# Virtual environment
+.venv/
+
+# dbt
+dbt_packages/
+target/
+logs/
+*.duckdb
+*.db
+
+# Dagster
+dagster_home/
+glucose_ingest.log
+
+# OS/system files
+.DS_Store
+Thumbs.db
+
+# dbt profiles (local config)
+~/.dbt/
+
+# Log and backup files
+*.log
+*.bak
+
+# Environment variables
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.log
+
+
