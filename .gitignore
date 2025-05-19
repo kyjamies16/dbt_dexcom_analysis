@@ -11,6 +11,8 @@ logs/
 # Dagster
 dagster_home/
 glucose_ingest.log
+glucose_ingest_project/.tmp_*
+
 
 # OS/system files
 .DS_Store
