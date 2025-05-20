@@ -14,10 +14,12 @@ WITH source AS (
       quote = '"',
       ignore_errors = TRUE
     )
+  WHERE
+    CAST(
+      "Readings (mg/dL)" AS INTEGER
+    ) >= 0
 )
 SELECT
   *
 FROM
   source
-WHERE
-  glucose_mg_dl >= 0

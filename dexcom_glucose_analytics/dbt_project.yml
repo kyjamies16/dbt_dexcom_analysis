@@ -32,6 +32,7 @@ vars:
 # files using the `{{ config(...) }}` macro.
 models:
   dexcom_glucose_analytics:
+    +database: ""
     # Config indicated by + and applies to all files under models/example/
     example:
       +materialized: view
