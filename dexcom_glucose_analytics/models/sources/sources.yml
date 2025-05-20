@@ -1,0 +1,26 @@
+version: 2
+
+sources:
+  - name: dexcom
+    schema: main # <-- DuckDB default schema
+    database: "" # Intentionally left empty as DuckDB does not require a database name
+    tables:
+      - name: glucose_readings # logical name used in dbt DAG
+        identifier: stg_pydex_readings # actual table name in DuckDB
+        description: "Glucose readings ingested via PyDexcom API."
+
+        loaded_at_field: reading_ts
+        freshness:
+          warn_after: { count: 2, period: hour }
+          error_after: { count: 6, period: hour }
+
+        columns:
+          - name: reading_ts
+            description: "Timestamp of glucose reading in UTC timezone"
+            tests:
+              - not_null
+
+          - name: glucose_mg_dl
+            description: "Glucose value in mg/dL"
+            tests:
+              - not_null
