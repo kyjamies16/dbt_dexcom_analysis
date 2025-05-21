@@ -4,7 +4,7 @@ WITH source AS (
   FROM
     {{ source(
       'dexcom',
-      'glucose_readings'
+      'dexcom_glucose_readings'
     ) }}
 ),
 renamed AS (

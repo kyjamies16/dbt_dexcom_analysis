@@ -86,5 +86,5 @@ con.register("combined_df", combined_df)
 con.execute(f"INSERT INTO {TABLE_NAME} SELECT * FROM combined_df")
 
 # Confirm and close
-print(f"✅ Total loaded: {len(combined_df)} rows into '{TABLE_NAME}'")
+print(f"Total loaded: {len(combined_df)} rows into '{TABLE_NAME}'")
 con.close()
