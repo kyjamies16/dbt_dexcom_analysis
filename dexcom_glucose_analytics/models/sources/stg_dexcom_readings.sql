@@ -9,8 +9,12 @@ WITH source AS (
 ),
 renamed AS (
   SELECT
-    reading_ts AS reading_timestamp,
-    glucose_mg_dl AS glucose_mg_dl
+    CAST(
+      reading_ts AS TIMESTAMP
+    ) AS reading_timestamp,
+    CAST(
+      glucose_mg_dl AS INTEGER
+    ) AS glucose_mg_dl
   FROM
     source
 )

@@ -24,3 +24,5 @@ sources:
             description: "Glucose value in mg/dL"
             tests:
               - not_null
+      - name: tconnect_glucose
+        description: "Backfilled glucose data from t:connect export."
