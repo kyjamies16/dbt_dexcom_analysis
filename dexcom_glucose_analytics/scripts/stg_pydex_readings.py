@@ -23,7 +23,7 @@ try:
     dexcom = Dexcom(username=USERNAME, password=PASSWORD)
     reading = dexcom.get_current_glucose_reading()
 except Exception as e:
-    msg = "❌ Failed to fetch glucose reading from Dexcom API"
+    msg = "Failed to fetch glucose reading from Dexcom API"
     logging.error(msg, exc_info=True)
     print(msg, e)
     raise
@@ -36,7 +36,7 @@ df = pd.DataFrame([{
 
 
 try:
-    con = duckdb.connect("dbt_duckdb.db")
+    con = duckdb.connect("C:/Users/krjam/dexcom/dexcom_glucose_analytics/dbt_duckdb.db")
     con.execute("""
         CREATE TABLE IF NOT EXISTS stg_pydex_readings (
             reading_ts TIMESTAMP,
@@ -44,9 +44,9 @@ try:
         )
     """)
     con.execute("INSERT INTO stg_pydex_readings SELECT * FROM df")
-    logging.info(f"✅ Inserted new reading: {df.to_dict(orient='records')[0]}")
+    logging.info(f" Inserted new reading: {df.to_dict(orient='records')[0]}")
 except Exception as e:
-    msg = "❌ Failed to fetch glucose reading from Dexcom API"
+    msg = "Failed to fetch glucose reading from Dexcom API"
     logging.error(msg, exc_info=True)
     print(msg, e)
     raise
