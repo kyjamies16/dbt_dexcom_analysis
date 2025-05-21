@@ -1,0 +1,16 @@
+version: 2
+
+models:
+  - name: int_dexcom_tconnect_union
+    description: "Unified glucose readings from PyDexcom API and T:Connect CSV export. Readings expected every 5 minutes where data is available. When data is unavailable, gaps or null values may be present."
+    columns:
+      - name: reading_timestamp
+        description: "Timestamp of glucose reading in Central timezone (accounts for daylight saving time)"
+        tests:
+          - not_null
+          - unique
+
+      - name: glucose_mg_dl
+        description: "Glucose value in mg/dL"
+        tests:
+          - not_null
