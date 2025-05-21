@@ -2,10 +2,10 @@ version: 2
 
 sources:
   - name: dexcom
-    schema: main # <-- DuckDB default schema
+    schema: main
     tables:
-      - name: dexcom_glucose_readings # logical name used in dbt DAG
-        identifier: stg_pydex_readings # actual table name in DuckDB
+      - name: dexcom_glucose_readings
+        identifier: stg_pydex_readings
         description: "Glucose readings ingested via PyDexcom API."
         loaded_at_field: reading_ts
         freshness:
@@ -25,15 +25,15 @@ sources:
             tests:
               - not_null
 
-  - name: t_connect_glucose_readings
+  - name: t_connect
     schema: main
     tables:
-      - name: t_connect_glucose_readings # logical name used in dbt DAG
-        identifier: stg_tconnect_csv_data # actual table name in DuckDB
+      - name: t_connect_glucose_readings
+        identifier: stg_tconnect_csv_data
         description: "Backfilled glucose data from t:connect export."
         columns:
           - name: reading_ts
-            description: "Timestamp of glucose reading in UTC timezone"
+            description: "Timestamp of glucose reading in Central timezone"
             tests:
               - not_null
           - name: glucose_mg_dl
