@@ -17,7 +17,7 @@ sources:
             period: hour
         columns:
           - name: reading_ts
-            description: "Timestamp of glucose reading in UTC timezone"
+            description: "Timestamp of glucose reading in Central timezone"
             tests:
               - not_null
           - name: glucose_mg_dl
