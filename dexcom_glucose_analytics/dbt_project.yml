@@ -32,5 +32,12 @@ vars:
 # files using the `{{ config(...) }}` macro.
 models:
   dexcom_glucose_analytics:
-    +schema: main
-    +database: dbt_duckdb
+    sources:
+      +schema: staging
+      +materialized: view
+    intermediate:
+      +schema: intermediate
+      +materialized: table
+    mart:
+      +schema: mart
+      +materialized: table
