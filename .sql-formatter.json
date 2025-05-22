@@ -1,0 +1,9 @@
+{
+  "language": "sql",
+  "indent": "    ",
+  "uppercase": true,
+  "linesBetweenQueries": 2,
+  "keywordCase": "upper",
+  "logicalOperatorNewline": "before",
+  "tabWidth": 4
+}

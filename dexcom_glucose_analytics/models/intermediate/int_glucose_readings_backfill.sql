@@ -23,7 +23,7 @@ SELECT
   glucose_mg_dl,
 
   -- Date metadata 
-  reading_timestamp::DATE AS reading_date,
+  reading_timestamp AS reading_date,
   STRFTIME(reading_timestamp, '%w')::INTEGER AS day_of_week,  
   STRFTIME(reading_timestamp, '%A') AS day_name,
   STRFTIME(reading_timestamp, '%W')::INTEGER AS iso_week,         

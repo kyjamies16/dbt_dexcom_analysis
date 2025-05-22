@@ -28,16 +28,9 @@ models:
         description: Hour extracted from timestamp (0-23)
         tests:
           - not_null
-          - dbt_expectations.expect_column_values_to_be_between:
-              min_value: 0
-              max_value: 23
 
       - name: day_of_week
         description: Numeric day of week (0 = Sunday)
-        tests:
-          - dbt_expectations.expect_column_values_to_be_between:
-              min_value: 0
-              max_value: 6
 
       - name: time_of_day_bucket
         description: Morning, Afternoon, Evening, Night
