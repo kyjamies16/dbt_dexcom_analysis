@@ -14,3 +14,20 @@ models:
         description: "Glucose value in mg/dL"
         tests:
           - not_null
+      - name: day_of_week
+        description: "Day of the week (0=Monday, 6=Sunday)"
+      - name: day_name
+        description: "Name of the day (e.g., Monday, Tuesday)"
+      - name: iso_week
+        description: "ISO week number of the year (1-53)"
+      - name: iso_year
+      - name: month
+        description: "Month of the year (1-12)"
+      - name: year
+        description: "Year of the reading"
+      - name: month_start_date
+        description: "Start date of the month (YYYY-MM-DD)"
+      - name: hour_of_day
+        description: "Hour of the day (0-23)"
+      - name: time_of_day_bucket
+        description: "Morning 5am-11am, Afternoon 12pm-5pm, Evening 5pm-9pm, Night 9pm-5am"

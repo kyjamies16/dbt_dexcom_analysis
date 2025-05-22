@@ -1,0 +1,66 @@
+version: 2
+
+models:
+  - name: mart_glucose_readings
+    description: Final mart combining Dexcom and T:Connect readings with enriched time and range metadata.
+    columns:
+      - name: reading_timestamp
+        description: Timestamp of glucose reading
+        tests:
+          - not_null
+          - unique
+
+      - name: glucose_mg_dl
+        description: Glucose value in mg/dL
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 30
+              max_value: 400
+              strictly: true
+
+      - name: reading_date
+        description: Date portion of timestamp
+        tests:
+          - not_null
+
+      - name: hour_of_day
+        description: Hour extracted from timestamp (0-23)
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 23
+
+      - name: day_of_week
+        description: Numeric day of week (0 = Sunday)
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 6
+
+      - name: time_of_day_bucket
+        description: Morning, Afternoon, Evening, Night
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["Morning", "Afternoon", "Evening", "Night"]
+
+      - name: is_in_range
+        description: TRUE if glucose is 70–180 mg/dL
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: delta_glucose
+        description: Change from previous reading
+        tests: [] # Allow nulls for first reading of the day
+
+      - name: week_start_date
+        tests:
+          - not_null
+
+      - name: month_start_date
+        tests:
+          - not_null
