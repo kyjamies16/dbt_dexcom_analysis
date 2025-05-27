@@ -1,9 +1,14 @@
 from dagster import asset
 import subprocess
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=Path(__file__).resolve().parents[1] / ".env")
 
 @asset
 def ingest_glucose_reading(context):
+    # Absolute paths to script and venv python
     script_path = os.path.abspath(
         os.path.join("..", "dexcom_glucose_analytics", "scripts", "stg_pydex_readings.py")
     )
@@ -18,7 +23,8 @@ def ingest_glucose_reading(context):
             [python_path, script_path],
             check=True,
             capture_output=True,
-            text=True
+            text=True,
+            env=os.environ.copy(),  # ✅ Ensure current env (with .env vars) is inherited
         )
         context.log.info("✅ Script succeeded:")
         context.log.info(result.stdout)
