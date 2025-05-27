@@ -19,11 +19,6 @@ models:
               max_value: 400
               strictly: true
 
-      - name: reading_date
-        description: Date portion of timestamp
-        tests:
-          - not_null
-
       - name: hour_of_day
         description: Hour extracted from timestamp (0-23)
         tests:

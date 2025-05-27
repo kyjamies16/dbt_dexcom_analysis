@@ -19,6 +19,8 @@ renamed AS (
     source
 )
 SELECT
-  *
+  DISTINCT
+  reading_timestamp,
+  glucose_mg_dl,
 FROM
   renamed
