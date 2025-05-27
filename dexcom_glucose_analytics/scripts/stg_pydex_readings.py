@@ -43,7 +43,15 @@ try:
             glucose_mg_dl INTEGER
         )
     """)
-    con.execute("INSERT INTO stg_pydex_readings SELECT * FROM df")
+    con.execute("""
+    INSERT INTO stg_pydex_readings
+    SELECT * FROM df
+    WHERE NOT EXISTS (
+        SELECT 1 FROM stg_pydex_readings
+        WHERE stg_pydex_readings.reading_ts = df.reading_ts
+    )
+""")
+
     logging.info(f" Inserted new reading: {df.to_dict(orient='records')[0]}")
 except Exception as e:
     msg = "Failed to fetch glucose reading from Dexcom API"

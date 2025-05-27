@@ -1,8 +1,6 @@
 import pandas as pd
 import altair as alt
 
-
-
 def generate_glucose_time_chart(df: pd.DataFrame, start_date, end_date):
   chart_df = df.loc[
     (df["reading_timestamp"].dt.date >= start_date) &
