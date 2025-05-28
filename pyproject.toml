@@ -1,0 +1,2 @@
+[tool.dagster]
+module_name = "glucose_ingest_project.definitions"
