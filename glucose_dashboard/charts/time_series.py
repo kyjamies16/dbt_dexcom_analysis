@@ -28,11 +28,23 @@ def generate_glucose_time_chart(df: pd.DataFrame, start_date, end_date):
     agg["p15_str"] = agg["p15"].round(1).astype(str) + " mg/dL"
     agg["p75_str"] = agg["p75"].round(1).astype(str) + " mg/dL"
 
-    time_ticks = pd.date_range("00:00", "23:30", freq="30min").strftime("%H:%M").tolist()
-    label_map = {
-        h: pd.to_datetime(h, format="%H:%M").strftime("%I:%M %p").lstrip("0")
-        for h in time_ticks
-    }
+    # 1. All 30-min intervals (data categories)
+    full_time_ticks = pd.date_range("00:00", "23:30", freq="30min").strftime("%H:%M").tolist()
+
+    # 2. Hourly ticks for axis labeling
+    visible_ticks = pd.date_range("00:00", "23:00", freq="1H").strftime("%H:%M").tolist()
+
+    # 3. Label map: include labels for *all* 30-min intervals
+    label_map = {}
+    for t in full_time_ticks:
+        dt = pd.to_datetime(t, format="%H:%M")
+        label = dt.strftime("%I:%M %p").lstrip("0")  # '1:00 AM', '1:30 AM', etc.
+        if label == "12:00 AM":
+            label = "Midnight"
+        elif label == "12:00 PM":
+            label = "Noon"
+        label_map[t] = label
+
     agg["label"] = agg["time_of_day"].map(label_map)
 
     # 🛡️ Handle missing or NaN percentiles
@@ -42,11 +54,11 @@ def generate_glucose_time_chart(df: pd.DataFrame, start_date, end_date):
 
     shared_x = alt.X(
         "time_of_day:N",
-        sort=time_ticks,
+        sort=full_time_ticks,
         axis=alt.Axis(
             title="Time",
             labelAngle=-45,
-            values=time_ticks,
+            values=visible_ticks,  # 👈 only hourly labels shown
             labelExpr='{'
                 + ', '.join(f'"{k}": "{v}"' for k, v in label_map.items())
                 + '}[datum.value]'
@@ -100,6 +112,7 @@ def generate_glucose_time_chart(df: pd.DataFrame, start_date, end_date):
     return (
         alt.layer(band, line, rule_chart, threshold_labels)
         .resolve_scale(y='shared')
+        .properties(padding={"bottom": 80})
         .configure_view(stroke=None)
         .configure_axis(grid=False)
         .interactive()
