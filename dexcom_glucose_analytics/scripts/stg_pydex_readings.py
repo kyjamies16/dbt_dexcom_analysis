@@ -29,6 +29,12 @@ if __name__ == "__main__":
     try:
         dexcom = Dexcom(username=USERNAME, password=PASSWORD)
         reading = dexcom.get_current_glucose_reading()
+        
+        if reading is None:
+            msg = "Dexcom returned no current glucose reading."
+            logging.warning(msg)
+            print(msg)
+            exit(0)
     except Exception as e:
         msg = "Failed to fetch glucose reading from Dexcom API"
         logging.error(msg, exc_info=True)
