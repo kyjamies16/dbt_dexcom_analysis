@@ -4,74 +4,75 @@ import duckdb
 import pandas as pd
 from dotenv import load_dotenv
 import os
+from datetime import datetime
 
-# Load environment variables from .env
+# Load environment variables
 load_dotenv()
-
-# Debug print to confirm .env is working
-print(f"[DEBUG - ingest script] DATABASE_PATH = {os.getenv('DATABASE_PATH')}")
-
-# Use env var for DB path
 DATABASE_PATH = os.getenv("DATABASE_PATH")
+USERNAME = os.getenv("DEXCOM_USERNAME")
+PASSWORD = os.getenv("DEXCOM_PASSWORD")
 
 # Setup logging
 logging.basicConfig(
-    filename='glucose_ingest.log', 
+    filename="glucose_ingest.log",
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-if __name__ == "__main__":
-    # Get Dexcom credentials
-    USERNAME = os.getenv("DEXCOM_USERNAME")
-    PASSWORD = os.getenv("DEXCOM_PASSWORD")
-
+def main():
     try:
         dexcom = Dexcom(username=USERNAME, password=PASSWORD)
-        reading = dexcom.get_current_glucose_reading()
-        
-        if reading is None:
-            msg = "Dexcom returned no current glucose reading."
-            logging.warning(msg)
-            print(msg)
-            exit(0)
     except Exception as e:
-        msg = "Failed to fetch glucose reading from Dexcom API"
+        msg = "Failed to authenticate with Dexcom"
         logging.error(msg, exc_info=True)
         print(msg, e)
-        raise
+        return
 
-    # Create DataFrame
-    df = pd.DataFrame([{
-        "reading_ts": reading.datetime,
-        "glucose_mg_dl": reading.mg_dl
-    }])
+    try:
+        readings = dexcom.get_glucose_readings(1440)  # last 24 hours
+    except Exception as e:
+        msg = "Failed to fetch glucose readings"
+        logging.error(msg, exc_info=True)
+        print(msg, e)
+        return
 
-# Insert into DuckDB
-try:
-  with duckdb.connect(DATABASE_PATH) as con:
-    # Create table if it doesn't exist
-    con.execute("""
-      CREATE TABLE IF NOT EXISTS stg_pydex_readings (
-        reading_ts TIMESTAMP,
-        glucose_mg_dl INTEGER
-      )
-    """)
+    if not readings:
+        logging.info("No glucose readings returned from Dexcom.")
+        return
 
-    # Insert only if not already present
-    con.execute("""
-      INSERT INTO stg_pydex_readings
-      SELECT * FROM df
-      WHERE NOT EXISTS (
-        SELECT 1 FROM stg_pydex_readings
-        WHERE stg_pydex_readings.reading_ts = df.reading_ts
-      )
-    """)
+    # Build dataframe
+    df = pd.DataFrame([(r.datetime, r.mg_dl) for r in readings],
+                      columns=["reading_ts", "glucose_mg_dl"])
+    df.drop_duplicates(subset="reading_ts", inplace=True)
 
-    # Log success
-    logging.info(f"Inserted new reading: {df.to_dict(orient='records')[0]}")
-except Exception as e:
-  msg = "Failed to insert glucose reading into DuckDB"
-  logging.error(msg, exc_info=True)
-  print(msg, e)
-  raise
+    logging.info(f"Retrieved {len(df)} new readings from Dexcom.")
+
+    # Insert into DuckDB
+    try:
+        with duckdb.connect(DATABASE_PATH) as con:
+            con.execute("""
+                CREATE TABLE IF NOT EXISTS stg_pydex_readings (
+                    reading_ts TIMESTAMP,
+                    glucose_mg_dl INTEGER
+                )
+            """)
+
+            con.register("df", df)
+            con.execute("CREATE OR REPLACE TEMP TABLE new_data AS SELECT * FROM df")
+            con.execute("""
+                INSERT INTO stg_pydex_readings
+                SELECT * FROM new_data
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM stg_pydex_readings
+                    WHERE stg_pydex_readings.reading_ts = new_data.reading_ts
+                )
+            """)
+
+            logging.info(f"Inserted {len(df)} new rows into stg_pydex_readings.")
+    except Exception as e:
+        msg = "Failed to insert readings into DuckDB"
+        logging.error(msg, exc_info=True)
+        print(msg, e)
+
+if __name__ == "__main__":
+    main()
