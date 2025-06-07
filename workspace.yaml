@@ -1,2 +1,6 @@
 load_from:
-  - python_file: glucose_ingest_project/definitions.py
+  - grpc_server:
+      host: localhost
+      port: 4000
+      location_name: local
+      module_name: glucose_ingest_project.definitions

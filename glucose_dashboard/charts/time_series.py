@@ -1,9 +1,12 @@
-"""Creates a time series chart of glucose readings over a specified date range.."""
 
 import pandas as pd
 import altair as alt
 
 def generate_glucose_time_chart(df: pd.DataFrame, start_date, end_date):
+    """
+    Creates a time series chart of glucose readings over a specified date range
+    """
+
     chart_df = df.loc[
         (df["reading_timestamp"].dt.date >= start_date) &
         (df["reading_timestamp"].dt.date <= end_date),
@@ -11,7 +14,7 @@ def generate_glucose_time_chart(df: pd.DataFrame, start_date, end_date):
     ].copy()
 
     chart_df.drop_duplicates(subset=["reading_timestamp", "glucose_mg_dl"], inplace=True)
-    chart_df["reading_timestamp"] = pd.to_datetime(chart_df["reading_timestamp"]).dt.tz_localize(None)
+    chart_df["reading_timestamp"] = pd.to_datetime(chart_df["reading_timestamp"])
 
     if chart_df.empty:
         return None
@@ -47,7 +50,7 @@ def generate_glucose_time_chart(df: pd.DataFrame, start_date, end_date):
 
     agg["label"] = agg["time_of_day"].map(label_map)
 
-    # 🛡️ Handle missing or NaN percentiles
+    # Handle missing or NaN percentiles
     p75_max = agg["p75"].max()
     y_max = p75_max + 10 if pd.notnull(p75_max) else 220
     y_domain = [0, max(220, y_max)]
