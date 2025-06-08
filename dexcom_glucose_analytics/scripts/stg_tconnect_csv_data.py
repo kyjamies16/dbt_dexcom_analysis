@@ -2,7 +2,6 @@ import os
 import pandas as pd
 import duckdb
 from io import StringIO
-from datetime import datetime
 
 # Paths
 CSV_FOLDER = "C:/Users/krjam/dexcom/dexcom_glucose_analytics/seeds/data"
@@ -34,9 +33,12 @@ con.execute(f"""
 # Aggregate data
 combined_df = pd.DataFrame()
 
+# Skip files that are already in the audit log
+existing_files = con.execute(f"SELECT filename FROM {AUDIT_TABLE}").fetchdf()["filename"].tolist()
+
 # Loop through files
 for filename in os.listdir(CSV_FOLDER):
-    if filename.endswith(".csv"):
+    if filename.endswith(".csv") and filename not in existing_files:
         full_path = os.path.join(CSV_FOLDER, filename)
         try:
             with open(full_path, "r", encoding="utf-8") as f:
@@ -62,6 +64,8 @@ for filename in os.listdir(CSV_FOLDER):
                 cleaned["reading_timestamp"] = pd.to_datetime(df["EventDateTime"], errors="coerce")
                 cleaned["glucose_mg_dl"] = pd.to_numeric(df["Readings (mg/dL)"], errors="coerce")
                 cleaned.dropna(subset=["reading_timestamp", "glucose_mg_dl"], inplace=True)
+                cleaned.drop_duplicates(subset=["reading_timestamp"], inplace=True)
+
 
                 row_count = len(cleaned)
                 combined_df = pd.concat([combined_df, cleaned], ignore_index=True)
@@ -81,10 +85,16 @@ for filename in os.listdir(CSV_FOLDER):
             print(f" Error reading {filename}:\n{e}")
 
 # Final insert
-con.execute(f"DELETE FROM {TABLE_NAME}")
-con.register("combined_df", combined_df)
-con.execute(f"INSERT INTO {TABLE_NAME} SELECT * FROM combined_df")
+# Only insert new rows
+if not combined_df.empty:
+    con.register("combined_df", combined_df)
+    con.execute(f"INSERT INTO {TABLE_NAME} SELECT * FROM combined_df")
+
 
 # Confirm and close
 print(f"Total loaded: {len(combined_df)} rows into '{TABLE_NAME}'")
+else_message = "No new data loaded."
+if combined_df.empty:
+    print(else_message)
+
 con.close()
