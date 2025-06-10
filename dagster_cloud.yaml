@@ -1,6 +1,0 @@
-# dagster_cloud.yaml
-
-cloud:
-  organization: "kyle-jamieson"
-  deployment: prod
-  agent_token: widgets-r-us:eb0742fe30fd4b3c8c5901d14de30999

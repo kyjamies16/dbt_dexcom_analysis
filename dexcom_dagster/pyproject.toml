@@ -1,5 +1,5 @@
 [project]
-name = "glucose_ingest_project"
+name = "dexcom_dagster"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -7,12 +7,15 @@ requires-python = ">=3.9,<3.13"
 dependencies = [
     "dagster",
     "dagster-cloud",
+    "dagster-dbt",
+    "dbt-snowflake<1.10",
+    "dbt-duckdb<1.10",
+    "dbt-duckdb<1.10",
 ]
 
 [project.optional-dependencies]
 dev = [
     "dagster-webserver", 
-    "pytest",
 ]
 
 [build-system]
@@ -20,8 +23,5 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.dagster]
-module_name = "glucose_ingest_project.definitions"
-code_location_name = "glucose_ingest_project"
-
-[tool.setuptools.packages.find]
-exclude=["glucose_ingest_project_tests"]
+module_name = "dexcom_dagster.definitions"
+code_location_name = "dexcom_dagster"
