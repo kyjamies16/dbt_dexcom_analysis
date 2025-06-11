@@ -1,0 +1,3 @@
+load_from:
+  # Option A: load via relative path to your definitions file
+  - python_file: dexcom_dagster/definitions.py
