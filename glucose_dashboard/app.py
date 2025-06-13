@@ -1,7 +1,8 @@
 import streamlit as st
 
+
 import charts
-import logic
+import logic 
 from utils.load_env import load_root_env
 from utils.formatting import format_pretty_date
 from data.load_data import load_glucose_data
@@ -29,6 +30,10 @@ selected_bucket = logic.time_of_day_filter(filtered_df)
 if selected_bucket != "All":
     filtered_df = filtered_df[filtered_df["time_of_day_bucket"] == selected_bucket]
 
+selected_range = logic.blood_sugar_type_filter(filtered_df)
+if selected_range != "All":
+    filtered_df = filtered_df[filtered_df["glucose_range_label"] == selected_range]
+
 if filtered_df.empty:
     st.title("Overview")
     st.caption(f"{range_label}  |  {start_date} - {end_date}")
@@ -37,7 +42,7 @@ if filtered_df.empty:
 
 # --- Download ---
 csv = filtered_df.to_csv(index=False).encode("utf-8")
-st.download_button("📥 Download CSV", csv, settings.CSV_FILENAME, "text/csv")
+st.download_button("📅 Download CSV", csv, settings.CSV_FILENAME, "text/csv")
 
 # --- Metrics ---
 last_reading_ts = filtered_df["reading_timestamp"].max()
@@ -55,17 +60,20 @@ st.divider()
 # --- Time Series Chart ---
 start_str = format_pretty_date(start_date)
 end_str = format_pretty_date(end_date)
+
 subtitle = (
     f"Glucose Trends by Time of Day ({start_str} to {end_str})"
     if selected_bucket == "All"
     else f"{selected_bucket} Glucose Trends ({start_str} to {end_str})"
 )
+
 st.subheader(subtitle)
+
 with st.spinner("Loading chart..."):
     st.markdown(settings.TOOLTIP_HINT)
     chart = charts.generate_glucose_time_chart(filtered_df, start_date, end_date)
     if chart:
-        st.altair_chart(chart, use_container_width=True)
+        st.plotly_chart(chart, use_container_width=True)
     else:
         st.info("No chart data available.")
 

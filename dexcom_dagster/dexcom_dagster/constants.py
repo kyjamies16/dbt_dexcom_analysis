@@ -1,11 +1,17 @@
+import os
 from pathlib import Path
-from dagster_dbt import DbtCliResource
+from dexcom_dagster.utils.env import load_environment
 
-dbt_project_dir = Path("C:/Users/krjam/dexcom/dexcom_glucose_analytics")
+# Load environment (.env.dev or .env.prod)
+load_environment()
 
-dbt = DbtCliResource(
-    project_dir=str(dbt_project_dir),
-    profiles_dir="C:/Users/krjam/.dbt",
-    working_directory=str(dbt_project_dir),
-)
-dbt_manifest_path = dbt_project_dir / "target" / "manifest.json"
+# DBT project configuration
+DBT_PROJECT_PATH = Path(os.getenv("DBT_PROJECT_PATH", "C:/Users/krjam/dexcom/dexcom_glucose_analytics"))
+DBT_PROFILES_DIR = os.getenv("DBT_PROFILE_DIR", "C:/Users/krjam/.dbt")
+DBT_TARGET = os.getenv("DBT_TARGET", "prod")
+DB_PATH = os.getenv("DATABASE_PATH", "C:/Users/krjam/dexcom/dbt_duckdb_prod.db")
+dbt_manifest_path = DBT_PROJECT_PATH / "target" / "manifest.json"
+
+
+
+

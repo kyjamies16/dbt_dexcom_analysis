@@ -3,7 +3,7 @@ WITH date_range AS (
     MIN(CAST(reading_timestamp AS DATE)) AS start_date,
     MAX(CAST(reading_timestamp AS DATE)) AS end_date
   FROM
-    {{ ref('int_glucose_readings_combined') }}
+    {{ ref('mart_glucose_readings') }}
 ),
 
 expected_dates AS (
@@ -21,7 +21,7 @@ actual_dates AS (
   SELECT
     DISTINCT CAST(reading_timestamp AS DATE) AS reading_date
   FROM
-    {{ ref('int_glucose_readings_combined') }}
+    {{ ref('mart_glucose_readings') }}
 )
 
 SELECT
