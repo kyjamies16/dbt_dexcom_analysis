@@ -4,22 +4,14 @@ setup(
     name="dexcom_dagster",
     version="0.0.1",
     packages=find_packages(),
-    package_data={
-        "dexcom_dagster": [
-            "dbt-project/**/*",
-        ],
-    },
     install_requires=[
         "dagster",
-        "dagster-cloud",
         "dagster-dbt",
         "dbt-snowflake<1.10",
         "dbt-duckdb<1.10",
-        "dbt-duckdb<1.10",
     ],
     extras_require={
-        "dev": [
-            "dagster-webserver",
-        ]
+        "dev": ["dagster-webserver"],
+        "cloud": ["dagster-cloud"],
     },
 )

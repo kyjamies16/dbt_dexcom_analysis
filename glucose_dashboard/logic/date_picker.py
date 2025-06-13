@@ -7,6 +7,7 @@ def get_date_range_selector(df):
     "Last 7 Days": (datetime.date.today() - datetime.timedelta(days=7), datetime.date.today()),
     "Last 30 Days": (datetime.date.today() - datetime.timedelta(days=30), datetime.date.today()),
     "This Month": (datetime.date.today().replace(day=1), datetime.date.today()),
+    "Last 90 Days": (datetime.date.today() - datetime.timedelta(days=90), datetime.date.today()),
     "All Time": (
       df["reading_timestamp"].min().date(),
       df["reading_timestamp"].max().date(),

@@ -1,9 +1,19 @@
-from .ingest_glucose_readings import ingest_glucose_readings
-from .dbt_assets import dexcom_glucose_analytics_dbt_assets
-from dotenv import load_dotenv
+# dexcom_dagster/assets/__init__.py
+
 import os
+from dotenv import load_dotenv
 
-# Explicitly load .env from project root
-load_dotenv(dotenv_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env")))
+# 1) Load your .env from the project root (two levels up from assets/)
+dotenv_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", ".env")
+)
+load_dotenv(dotenv_path=dotenv_path)
 
-__all__ = ["ingest_glucose_readings", "dexcom_glucose_analytics_dbt_assets"]
+# 2) Export the assets in this package
+from .ingest_glucose_readings import ingest_glucose_readings
+from .dbt_assets import debug_dbt_asset
+
+__all__ = [
+    "ingest_glucose_readings",
+    "debug_dbt_asset",
+]

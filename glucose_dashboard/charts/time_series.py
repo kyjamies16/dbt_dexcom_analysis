@@ -1,24 +1,19 @@
-
+import plotly.graph_objects as go
 import pandas as pd
-import altair as alt
+import platform
 
-def generate_glucose_time_chart(df: pd.DataFrame, start_date, end_date):
-    """
-    Creates a time series chart of glucose readings over a specified date range
-    """
 
+def generate_glucose_time_chart(df, start_date, end_date):
     chart_df = df.loc[
-        (df["reading_timestamp"].dt.date >= start_date) &
+        (df["reading_timestamp"].dt.date >= start_date) & 
         (df["reading_timestamp"].dt.date <= end_date),
         ["reading_timestamp", "glucose_mg_dl"]
     ].copy()
 
-    chart_df.drop_duplicates(subset=["reading_timestamp", "glucose_mg_dl"], inplace=True)
-    chart_df["reading_timestamp"] = pd.to_datetime(chart_df["reading_timestamp"])
-
     if chart_df.empty:
         return None
 
+    chart_df["reading_timestamp"] = pd.to_datetime(chart_df["reading_timestamp"])
     chart_df["time_of_day"] = chart_df["reading_timestamp"].dt.floor("30min").dt.strftime("%H:%M")
 
     agg = chart_df.groupby("time_of_day")["glucose_mg_dl"].agg([
@@ -27,96 +22,64 @@ def generate_glucose_time_chart(df: pd.DataFrame, start_date, end_date):
         ("p75", lambda x: x.quantile(0.75))
     ]).reset_index()
 
-    agg["avg_str"] = agg["avg"].round(1).astype(str) + " mg/dL"
-    agg["p15_str"] = agg["p15"].round(1).astype(str) + " mg/dL"
-    agg["p75_str"] = agg["p75"].round(1).astype(str) + " mg/dL"
+    # Format ticks like "Midnight", "1 AM", "Noon", etc.
+    tick_times = pd.date_range("00:00", "23:30", freq="30min")
+    full_time_ticks = tick_times.strftime("%H:%M").tolist()
 
-    # 1. All 30-min intervals (data categories)
-    full_time_ticks = pd.date_range("00:00", "23:30", freq="30min").strftime("%H:%M").tolist()
-
-    # 2. Hourly ticks for axis labeling
-    visible_ticks = pd.date_range("00:00", "23:00", freq="1H").strftime("%H:%M").tolist()
-
-    # 3. Label map: include labels for *all* 30-min intervals
-    label_map = {}
-    for t in full_time_ticks:
+    def format_time_label(t):
         dt = pd.to_datetime(t, format="%H:%M")
-        label = dt.strftime("%I:%M %p").lstrip("0")  # '1:00 AM', '1:30 AM', etc.
-        if label == "12:00 AM":
-            label = "Midnight"
-        elif label == "12:00 PM":
-            label = "Noon"
-        label_map[t] = label
+        hour = dt.hour
+        if hour == 0:
+            return "Midnight"
+        elif hour == 12:
+            return "Noon"
+        else:
+            fmt = "%#I %p" if platform.system() == "Windows" else "%-I %p"
+            return dt.strftime(fmt)
 
-    agg["label"] = agg["time_of_day"].map(label_map)
+    tick_map = {t: format_time_label(t) for t in full_time_ticks}
+    agg = agg[agg["time_of_day"].isin(tick_map.keys())].copy()
+    agg["label"] = agg["time_of_day"].map(tick_map)
 
-    # Handle missing or NaN percentiles
-    p75_max = agg["p75"].max()
-    y_max = p75_max + 10 if pd.notnull(p75_max) else 220
-    y_domain = [0, max(220, y_max)]
+    # Remove potential duplicate labels
+    agg = agg.drop_duplicates(subset="label")
 
-    shared_x = alt.X(
-        "time_of_day:N",
-        sort=full_time_ticks,
-        axis=alt.Axis(
-            title="Time",
-            labelAngle=-45,
-            values=visible_ticks,  # 👈 only hourly labels shown
-            labelExpr='{'
-                + ', '.join(f'"{k}": "{v}"' for k, v in label_map.items())
-                + '}[datum.value]'
-        )
+    fig = go.Figure()
+
+    # Add shaded band
+    fig.add_trace(go.Scatter(
+        x=agg["label"], y=agg["p15"], mode="lines",
+        line=dict(width=0), showlegend=False, hoverinfo='skip', name="15th %"
+    ))
+    fig.add_trace(go.Scatter(
+        x=agg["label"], y=agg["p75"], mode="lines",
+        fill='tonexty', fillcolor='rgba(0,100,250,0.2)',
+        line=dict(width=0), showlegend=False, hoverinfo='skip', name="75th %"
+    ))
+
+    # Add average line
+    fig.add_trace(go.Scatter(
+        x=agg["label"], y=agg["avg"], mode="lines+markers",
+        name="Avg Glucose", line=dict(color='blue'),
+        hovertemplate="Time: %{x}<br>Avg: %{y:.1f} mg/dL"
+    ))
+
+    # Reference lines
+    fig.add_hline(y=70, line=dict(color="red", dash="dash"), annotation_text="LOW", annotation_position="bottom left")
+    fig.add_hline(y=180, line=dict(color="orange", dash="dash"), annotation_text="HIGH", annotation_position="top left")
+
+    fig.update_layout(
+        yaxis=dict(title="Glucose (mg/dL)", range=[50, 250]),
+        xaxis=dict(
+            title="Time of Day",
+            tickmode="array",
+            tickvals=agg["label"].tolist(),
+            ticktext=agg["label"].tolist(),
+            tickangle=-45
+        ),
+        margin=dict(t=40, b=100),
+        height=400,
+        showlegend=False
     )
 
-    base = alt.Chart(agg).encode(
-        x=shared_x,
-        tooltip=[
-            alt.Tooltip("label:N", title="Time"),
-            alt.Tooltip("avg_str:N", title="Avg Glucose"),
-            alt.Tooltip("p15_str:N", title="15th Percentile"),
-            alt.Tooltip("p75_str:N", title="75th Percentile")
-        ]
-    )
-
-    band = base.mark_area(opacity=0.3).encode(
-        y=alt.Y("p15:Q", scale=alt.Scale(domain=y_domain), title="Glucose (mg/dL)"),
-        y2="p75:Q"
-    )
-
-    line = base.mark_line().encode(
-        y=alt.Y("avg:Q", scale=alt.Scale(domain=y_domain))
-    )
-
-    threshold_df = pd.DataFrame({
-        "y": [70, 180],
-        "label": ["LOW", "HIGH"],
-        "color": ["red", "orange"]
-    })
-
-    rule_chart = alt.Chart(threshold_df).mark_rule().encode(
-        y=alt.Y("y:Q", scale=alt.Scale(domain=y_domain)),
-        color=alt.Color("color:N", scale=None),
-        tooltip=alt.Tooltip("label")
-    )
-
-    threshold_labels = alt.Chart(threshold_df).mark_text(
-        align="left",
-        baseline="middle",
-        dx=10,
-        fontWeight="bold",
-        fontSize=12,
-        color="white",
-        clip=False
-    ).encode(
-        y=alt.Y("y:Q", scale=alt.Scale(domain=y_domain)),
-        text=alt.Text("y:Q")
-    )
-
-    return (
-        alt.layer(band, line, rule_chart, threshold_labels)
-        .resolve_scale(y='shared')
-        .properties(padding={"bottom": 80})
-        .configure_view(stroke=None)
-        .configure_axis(grid=False)
-        .interactive()
-    )
+    return fig

@@ -2,10 +2,13 @@ import os
 import pandas as pd
 import duckdb
 from io import StringIO
+from dotenv import load_dotenv
+
 
 # Paths
+load_dotenv()
 CSV_FOLDER = "C:/Users/krjam/dexcom/dexcom_glucose_analytics/seeds/data"
-DB_PATH = "C:/Users/krjam/dexcom/dexcom_glucose_analytics/dbt_duckdb.db"
+DB_PATH = "C:/Users/krjam/dexcom/dbt_duckdb_prod.db"
 TABLE_NAME = "stg_tconnect_csv_data"
 AUDIT_TABLE = "load_audit_log"
 
