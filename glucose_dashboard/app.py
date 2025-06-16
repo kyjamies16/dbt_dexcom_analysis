@@ -95,8 +95,33 @@ st.divider()
 # --- Daily Average Chart ---
 st.header("Daily Average Glucose Over Time")
 st.markdown(settings.TOOLTIP_HINT)
-daily_chart = charts.generate_daily_average_chart(filtered_df, start_date, end_date)
+daily_chart = charts.generate_daily_average_chart(raw_df, start_date, end_date)
 if daily_chart:
     st.altair_chart(daily_chart, use_container_width=True)
 else:
     st.info("No data available to plot daily averages.")
+
+# --- Scatter Plot Chart ---
+st.header("Spike Recovery Analysis")
+
+st.markdown("""
+This scatter plot shows **spike recovery events** detected in glucose readings.
+""")
+
+with st.expander("ℹ️ How spike events are detected"):
+    st.markdown("""
+    - **Spike start:** Detected when glucose rises rapidly (≥ 30 mg/dL per hour) and blood sugar rises above 140 mg/dL.
+    - **Recovery:** Ends when glucose drops back to ≤ 140 mg/dL.
+    - Each point shows start time, peak level, duration, and peak bin.
+
+    This informations helps us understand how long it takes to recover from glucose spikes and the severity of those spikes.
+    """)
+
+spike_events = logic.find_spike_events(filtered_df)
+spike_chart = charts.plot_spike_recovery(spike_events)
+
+if spike_chart:
+    st.altair_chart(spike_chart, use_container_width=True)
+else:
+    st.info("No spike recovery events found for the current settings.")
+

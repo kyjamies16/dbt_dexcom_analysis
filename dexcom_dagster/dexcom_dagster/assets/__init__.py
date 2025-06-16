@@ -11,9 +11,9 @@ load_dotenv(dotenv_path=dotenv_path)
 
 # 2) Export the assets in this package
 from .ingest_glucose_readings import ingest_glucose_readings
-from .dbt_assets import debug_dbt_asset
+from .dbt_assets import all_dbt_assets
 
 __all__ = [
     "ingest_glucose_readings",
-    "debug_dbt_asset",
+    "all_dbt_assets",
 ]
