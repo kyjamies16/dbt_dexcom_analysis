@@ -68,7 +68,7 @@ root/
 * **Key jobs:**
 
   * `glucose_ingest_job`: Ingests new glucose readings.
-  * `materialize_dbt_job`: Runs dbt transformations.
+  * `partitioned_dbt_job`: Runs dbt transformations.
 * **Run locally:**
 
   ```bash
@@ -179,21 +179,13 @@ Make sure to store secrets like Dexcom credentials securely. Use `.env` locally 
 
 ## 🧑‍💻 Author
 
-**Your Name**
+**Kyle Jamieson**
 Data Analyst / Analytics Engineer
-[LinkedIn](#) | [GitHub](#)
+
 
 ---
 
-## ✅ TODO
 
-*
-
----
-
-## 📄 License
-
-Specify your license here (e.g., MIT).
 
 ---
 
