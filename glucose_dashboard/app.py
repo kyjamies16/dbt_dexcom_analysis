@@ -70,7 +70,9 @@ subtitle = (
 st.subheader(subtitle)
 
 with st.spinner("Loading chart..."):
-    st.markdown(settings.TOOLTIP_HINT)
+    st.markdown("""
+This chart shows average glucose at each time of day, with a shaded band for the typical P15–P75 range..
+""")
     chart = charts.generate_glucose_time_chart(filtered_df, start_date, end_date)
     if chart:
         st.plotly_chart(chart, use_container_width=True)
@@ -83,7 +85,9 @@ st.divider()
 st.markdown("## Glucose Heatmaps")
 heatmap_type = st.radio("Select heatmap type:", ["Low", "High"], horizontal=True)
 with st.spinner("Generating heatmap..."):
-    st.markdown(settings.TOOLTIP_HINT)
+    st.markdown("""
+This heat map highlights low and high blood glucose values based on time of day. 
+""")
     heatmap = charts.generate_glucose_heatmap(filtered_df, heatmap_type)
     if heatmap:
         st.altair_chart(heatmap, use_container_width=True)
@@ -94,7 +98,9 @@ st.divider()
 
 # --- Daily Average Chart ---
 st.header("Daily Average Glucose Over Time")
-st.markdown(settings.TOOLTIP_HINT)
+st.markdown("""
+This chart shows daily average glucose alongside a 7-day rolling trend..
+""")
 daily_chart = charts.generate_daily_average_chart(raw_df, start_date, end_date)
 if daily_chart:
     st.altair_chart(daily_chart, use_container_width=True)
@@ -112,7 +118,7 @@ with st.expander("ℹ️ How spike events are detected"):
     st.markdown("""
     - **Spike start:** Detected when glucose rises rapidly (≥ 30 mg/dL per hour) and blood sugar rises above 140 mg/dL.
     - **Recovery:** Ends when glucose drops back to ≤ 140 mg/dL.
-    - Each point shows start time, peak level, duration, and peak bin.
+    - Each point shows start time, peak level, and duration of the spike.
 
     This informations helps us understand how long it takes to recover from glucose spikes and the severity of those spikes.
     """)
