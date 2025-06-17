@@ -1,6 +1,5 @@
 import streamlit as st
 
-
 import charts
 import logic 
 from utils.load_env import load_root_env
@@ -12,7 +11,7 @@ from config import settings
 load_root_env()
 
 # Page config
-st.set_page_config(page_title= settings.APP_TITLE, layout="wide")
+st.set_page_config(page_title=settings.APP_TITLE, layout="wide")
 
 # Load data
 raw_df = load_glucose_data()
@@ -35,22 +34,23 @@ if selected_range != "All":
     filtered_df = filtered_df[filtered_df["glucose_range_label"] == selected_range]
 
 if filtered_df.empty:
-    st.title("Overview")
-    st.caption(f"{range_label}  |  {start_date} - {end_date}")
-    st.warning("No data available for the selected date range.")
+    st.title("Glucose Dashboard")
+    st.caption(f"{range_label} | {start_date} to {end_date}")
+    st.warning("⚠️ No data available for the selected date range.")
     st.stop()
 
 # --- Download ---
 csv = filtered_df.to_csv(index=False).encode("utf-8")
-st.download_button("📅 Download CSV", csv, settings.CSV_FILENAME, "text/csv")
+st.download_button("⬇️ Download Filtered CSV", csv, settings.CSV_FILENAME, "text/csv")
 
 # --- Metrics ---
 last_reading_ts = filtered_df["reading_timestamp"].max()
 last_reading_str = last_reading_ts.strftime(settings.LAST_TIME_FORMAT)
 metrics = logic.compute_summary_metrics(filtered_df)
 
-st.title("Overview")
-st.caption(f"{range_label}  |  {start_date} - {end_date}   |  📍 Last Reading: {last_reading_str}")
+# Improved main title and context line
+st.title("Glucose Overview")
+st.caption(f"**{range_label}** &nbsp; | &nbsp; **{start_date} — {end_date}** &nbsp; | &nbsp; **Last Reading:** {last_reading_str}")
 st.divider()
 
 logic.display_glucose_metrics(metrics)
@@ -62,66 +62,90 @@ start_str = format_pretty_date(start_date)
 end_str = format_pretty_date(end_date)
 
 subtitle = (
-    f"Glucose Trends by Time of Day ({start_str} to {end_str})"
+    f" Glucose Trends by Time of Day ({start_str} to {end_str})"
     if selected_bucket == "All"
-    else f"{selected_bucket} Glucose Trends ({start_str} to {end_str})"
+    else f" {selected_bucket} Glucose Trends ({start_str} to {end_str})"
 )
 
-st.subheader(subtitle)
+st.header(subtitle)
 
-with st.spinner("Loading chart..."):
+with st.spinner("Loading trend chart..."):
     st.markdown("""
-This chart shows average glucose at each time of day, with a shaded band for the typical P15–P75 range..
+Shows **average glucose levels** at each time of day, with a shaded band for the typical P15–P75 range.
 """)
     chart = charts.generate_glucose_time_chart(filtered_df, start_date, end_date)
     if chart:
         st.plotly_chart(chart, use_container_width=True)
     else:
-        st.info("No chart data available.")
+        st.info("No data available to plot trends for this selection.")
 
 st.divider()
 
 # --- Heatmap ---
-st.markdown("## Glucose Heatmaps")
+st.header(" Glucose Heatmaps")
+
 heatmap_type = st.radio("Select heatmap type:", ["Low", "High"], horizontal=True)
-with st.spinner("Generating heatmap..."):
+with st.spinner("Rendering heatmap..."):
     st.markdown("""
-This heat map highlights low and high blood glucose values based on time of day. 
+Highlights **low or high glucose readings** by time of day. Darker shades indicate more frequent readings in that range.
 """)
     heatmap = charts.generate_glucose_heatmap(filtered_df, heatmap_type)
     if heatmap:
         st.altair_chart(heatmap, use_container_width=True)
     else:
-        st.info("Not enough data to generate heatmap.")
+        st.info("Not enough data to generate this heatmap.")
 
 st.divider()
 
 # --- Daily Average Chart ---
 st.header("Daily Average Glucose Over Time")
-st.markdown("""
-This chart shows daily average glucose alongside a 7-day rolling trend..
-""")
-daily_chart = charts.generate_daily_average_chart(raw_df, start_date, end_date)
+
+with st.expander("ℹ️ How the daily average & anomaly band work"):
+    st.markdown("""
+    **What this chart shows:**
+    
+    - **Daily Average:** The blue line shows your average glucose for each day.
+    - **7-Day Rolling Average:** The orange line smooths out daily ups and downs to show your weekly trend.
+    - **Normal Range Band:** The shaded orange area represents the typical range based on your rolling average ± 2 standard deviations. This adapts to your recent readings.
+    - **Anomalies:** Red dots highlight days where your daily average is unusually high or low compared to your typical week.
+
+    This helps you see if your glucose control is staying consistent, drifting gradually, or having unusual spikes/dips that might need attention.
+    """)
+
+
+std_multiplier = st.slider(
+    "Anomaly Band Width (Standard Deviations)", 
+    min_value=1.5, 
+    max_value=3.0, 
+    value=2.0, 
+    step=0.5,
+    help="Controls how wide the 'normal' range is. Wider bands flag only more extreme daily glucose changes."
+
+)
+daily_chart = charts.generate_daily_average_chart(raw_df, start_date, end_date, std_multiplier=std_multiplier)
 if daily_chart:
     st.altair_chart(daily_chart, use_container_width=True)
 else:
-    st.info("No data available to plot daily averages.")
+    st.info("No daily average data available for the selected period.")
 
-# --- Scatter Plot Chart ---
-st.header("Spike Recovery Analysis")
+st.divider()
 
+# --- Spike Recovery Chart ---
+st.header(" Spike Recovery Analysis")
 st.markdown("""
-This scatter plot shows **spike recovery events** detected in glucose readings.
+Visualizes detected **glucose spike events** and how quickly levels return to normal.
 """)
 
-with st.expander("ℹ️ How spike events are detected"):
+with st.expander("ℹ️ How spikes are defined"):
     st.markdown("""
-    - **Spike start:** Detected when glucose rises rapidly (≥ 30 mg/dL per hour) and blood sugar rises above 140 mg/dL.
-    - **Recovery:** Ends when glucose drops back to ≤ 140 mg/dL.
-    - Each point shows start time, peak level, and duration of the spike.
+**How it works:**
 
-    This informations helps us understand how long it takes to recover from glucose spikes and the severity of those spikes.
-    """)
+- **Spike start:** Glucose rises ≥ 30 mg/dL per hour and crosses 140 mg/dL.
+- **Recovery:** Ends when glucose drops back to ≤ 140 mg/dL.
+- Each point shows the spike’s start time, peak level, and duration.
+
+This helps monitor recovery speed and spike severity.
+""")
 
 spike_events = logic.find_spike_events(filtered_df)
 spike_chart = charts.plot_spike_recovery(spike_events)
@@ -129,5 +153,4 @@ spike_chart = charts.plot_spike_recovery(spike_events)
 if spike_chart:
     st.altair_chart(spike_chart, use_container_width=True)
 else:
-    st.info("No spike recovery events found for the current settings.")
-
+    st.info("No spike recovery events detected for this data slice.")

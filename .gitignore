@@ -27,8 +27,8 @@ Thumbs.db
 
 # Environment variables
 .env
-*.prod
-*.dev
+.env.prod
+.env.dev
 
 # Python
 __pycache__/
