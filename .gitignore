@@ -5,8 +5,7 @@
 dbt_packages/
 target/
 logs/
-*.duckdb
-*.db
+
 
 # Dagster
 dagster_home/

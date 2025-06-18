@@ -1,5 +1,5 @@
 import streamlit as st
-
+import datetime
 import charts
 import logic 
 from utils.load_env import load_root_env
@@ -13,16 +13,24 @@ load_root_env()
 # Page config
 st.set_page_config(page_title=settings.APP_TITLE, layout="wide")
 
+
 # Load data
 raw_df = load_glucose_data()
 
 # --- Date Selection ---
 start_date, end_date, range_label = logic.get_date_range_selector(raw_df)
 
+# --- Adjust adjusted_end_date to max out at yesterday ---
+today = datetime.date.today()
+yesterday = today - datetime.timedelta(days=1)
+
+# Use the earlier of (adjusted_end_date from selector) or yesterday
+adjusted_end_date = min(end_date, yesterday)
+
 # --- Filter Data ---
 filtered_df = raw_df[
     (raw_df["reading_timestamp"].dt.date >= start_date) &
-    (raw_df["reading_timestamp"].dt.date <= end_date)
+    (raw_df["reading_timestamp"].dt.date <= adjusted_end_date)
 ].copy()
 
 selected_bucket = logic.time_of_day_filter(filtered_df)
@@ -35,7 +43,7 @@ if selected_range != "All":
 
 if filtered_df.empty:
     st.title("Glucose Dashboard")
-    st.caption(f"{range_label} | {start_date} to {end_date}")
+    st.caption(f"{range_label} | {start_date} to {adjusted_end_date}")
     st.warning("⚠️ No data available for the selected date range.")
     st.stop()
 
@@ -50,7 +58,9 @@ metrics = logic.compute_summary_metrics(filtered_df)
 
 # Improved main title and context line
 st.title("Glucose Overview")
-st.caption(f"**{range_label}** &nbsp; | &nbsp; **{start_date} — {end_date}** &nbsp; | &nbsp; **Last Reading:** {last_reading_str}")
+st.caption(f"**{range_label}** &nbsp; | &nbsp; **{start_date} — {adjusted_end_date}** &nbsp; | &nbsp; **Last Reading:** {last_reading_str}")
+st.info("ℹ️ **Note:** Glucose data is updated daily with a one-day latency. The latest date shown is always up to yesterday.")
+
 st.divider()
 
 logic.display_glucose_metrics(metrics)
@@ -59,7 +69,7 @@ st.divider()
 
 # --- Time Series Chart ---
 start_str = format_pretty_date(start_date)
-end_str = format_pretty_date(end_date)
+end_str = format_pretty_date(adjusted_end_date)
 
 subtitle = (
     f" Glucose Trends by Time of Day ({start_str} to {end_str})"
@@ -73,7 +83,7 @@ with st.spinner("Loading trend chart..."):
     st.markdown("""
 Shows **average glucose levels** at each time of day, with a shaded band for the typical P15–P75 range.
 """)
-    chart = charts.generate_glucose_time_chart(filtered_df, start_date, end_date)
+    chart = charts.generate_glucose_time_chart(filtered_df, start_date, adjusted_end_date)
     if chart:
         st.plotly_chart(chart, use_container_width=True)
     else:
@@ -122,7 +132,7 @@ std_multiplier = st.slider(
     help="Controls how wide the 'normal' range is. Wider bands flag only more extreme daily glucose changes."
 
 )
-daily_chart = charts.generate_daily_average_chart(raw_df, start_date, end_date, std_multiplier=std_multiplier)
+daily_chart = charts.generate_daily_average_chart(raw_df, start_date, adjusted_end_date, std_multiplier=std_multiplier)
 if daily_chart:
     st.altair_chart(daily_chart, use_container_width=True)
 else:

@@ -12,7 +12,7 @@ GLUCOSE_LOW = 70
 GLUCOSE_HIGH = 180
 
 # Streamlit app config
-APP_TITLE = "Glucose Overview"
+APP_TITLE = " Blood Glucose Overview"
 CSV_FILENAME = "glucose_data.csv"
 
 # Chart config
