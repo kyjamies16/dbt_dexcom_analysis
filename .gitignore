@@ -36,4 +36,10 @@ __pycache__/
 *.log
 *.ipynb
 
+# SQL styling
+*.json
 
+# DB
+*.db
+
+*.parquet
