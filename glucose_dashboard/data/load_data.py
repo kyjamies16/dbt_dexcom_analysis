@@ -1,27 +1,17 @@
-import os
+# Loads glucose data from a DuckDB database stored in an S3 bucket.
+
 import duckdb
 import pandas as pd
 import streamlit as st
-from utils.load_env import load_root_env
-
-# Load environment variables once
-load_root_env()
 
 def load_glucose_data():
-    db_path = os.getenv("DATABASE_PATH")  
+    s3_url = "https://chumbucket4356.s3.amazonaws.com/mart_glucose_readings.parquet"
+
     
-    if not db_path:
-        st.error("DATABASE_PATH is not set in your environment variables.")
-        st.stop()
+    df = duckdb.sql(f"SELECT * FROM '{s3_url}'").df()
 
-    # Open connection in read-only mode
-    con = duckdb.connect(db_path, read_only=True)
-
-    # Run query
-    df = con.execute("SELECT * FROM main_mart.mart_glucose_readings").fetchdf()
-
-    # Preprocess timestamps
     df["reading_timestamp"] = pd.to_datetime(df["reading_timestamp"])
     df["hour"] = df["reading_timestamp"].dt.hour
 
     return df
+
