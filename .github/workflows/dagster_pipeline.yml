@@ -1,6 +1,5 @@
 name: Daily Dagster Pipelines
 
-# 🗓️ Run daily at your local times (in UTC) + allow manual runs:
 on:
   schedule:
     - cron: "25 14 * * *" # glucose_ingest_job -> 9:25 AM Central == 14:25 UTC
@@ -12,6 +11,8 @@ jobs:
   glucose_ingest_job:
     runs-on: ubuntu-latest
     if: github.event.schedule == '25 14 * * *' || github.event_name == 'workflow_dispatch'
+    env:
+      DBT_PROFILES_DIR: profiles
     steps:
       - uses: actions/checkout@v3
 
@@ -24,6 +25,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # ✅ NEW: Ensure manifest is built fresh for Dagster
+      - name: Install dbt packages & build manifest
+        run: |
+          dbt deps --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
+          dbt compile --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
+
       - name: Run glucose_ingest_job
         run: |
           dagster job execute -m dexcom_dagster.definitions -j glucose_ingest_job
@@ -33,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.schedule == '30 14 * * *' || github.event_name == 'workflow_dispatch'
     env:
-      DBT_PROFILES_DIR: profiles # make sure this matches your repo!
+      DBT_PROFILES_DIR: profiles
     steps:
       - uses: actions/checkout@v3
 
@@ -60,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.schedule == '35 14 * * *' || github.event_name == 'workflow_dispatch'
     env:
-      DBT_PROFILES_DIR: profiles # ensure consistent profiles
+      DBT_PROFILES_DIR: profiles
     steps:
       - uses: actions/checkout@v3
 
@@ -73,7 +80,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ✅ Ensure manifest is always fresh for export job too!
       - name: Install dbt packages & build manifest
         run: |
           dbt deps --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
