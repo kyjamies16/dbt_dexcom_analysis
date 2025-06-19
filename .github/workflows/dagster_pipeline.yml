@@ -32,6 +32,8 @@ jobs:
   dbt_pipeline_job:
     runs-on: ubuntu-latest
     if: github.event.schedule == '30 14 * * *' || github.event_name == 'workflow_dispatch'
+    env:
+      DBT_PROFILES_DIR: profiles # make sure this matches your repo!
     steps:
       - uses: actions/checkout@v3
 
@@ -43,16 +45,22 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Install dbt packages & build manifest
+        run: |
+          dbt deps --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
+          dbt compile --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
 
       - name: Run dbt build for yesterday
         run: |
           YESTERDAY=$(date -u -d "yesterday" +%Y-%m-%d)
-          dbt build --project-dir ../dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR --vars "{\"start_date\": \"${YESTERDAY}\", \"end_date\": \"${YESTERDAY}\"}"
-        working-directory: dexcom_dagster
+          dbt build --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR --vars "{\"start_date\": \"${YESTERDAY}\", \"end_date\": \"${YESTERDAY}\"}"
 
   export_job:
     runs-on: ubuntu-latest
     if: github.event.schedule == '35 14 * * *' || github.event_name == 'workflow_dispatch'
+    env:
+      DBT_PROFILES_DIR: profiles # ensure consistent profiles
     steps:
       - uses: actions/checkout@v3
 
@@ -64,6 +72,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      # ✅ Ensure manifest is always fresh for export job too!
+      - name: Install dbt packages & build manifest
+        run: |
+          dbt deps --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
+          dbt compile --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
 
       - name: Run export_job
         run: |
