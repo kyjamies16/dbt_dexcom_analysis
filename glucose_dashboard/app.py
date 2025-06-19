@@ -59,7 +59,7 @@ metrics = logic.compute_summary_metrics(filtered_df)
 # Improved main title and context line
 st.title("Glucose Overview")
 st.caption(f"**{range_label}** &nbsp; | &nbsp; **{start_date} — {adjusted_end_date}** &nbsp; | &nbsp; **Last Reading:** {last_reading_str}")
-st.info("ℹ️ **Note:** Glucose data is updated daily with a one-day latency. The latest date shown is always up to yesterday.")
+st.info("ℹ️ **Note:** Glucose data is refreshed daily with a one-day delay. The most recent readings reflect data up to yesterday and are updated each morning by 9:40 AM Central Time..")
 
 st.divider()
 
