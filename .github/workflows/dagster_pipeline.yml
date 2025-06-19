@@ -1,17 +1,17 @@
 name: Daily Dagster Pipelines
 
+#  Run daily at your local times (in UTC) + allow manual runs:
 on:
   schedule:
-    - cron: "25 14 * * *" # glucose_ingest_job -> 14:25 UTC
-    - cron: "30 14 * * *" # partitioned_dbt_job -> 14:30 UTC
-    - cron: "35 14 * * *" # export_job -> 14:35 UTC
+    - cron: "25 14 * * *" # glucose_ingest_job -> 9:25 AM Central == 14:25 UTC
+    - cron: "30 14 * * *" # dbt_pipeline_job -> 9:30 AM Central == 14:30 UTC
+    - cron: "35 14 * * *" # export_job -> 9:35 AM Central == 14:35 UTC
   workflow_dispatch:
 
 jobs:
   glucose_ingest_job:
     runs-on: ubuntu-latest
     if: github.event.schedule == '25 14 * * *' || github.event_name == 'workflow_dispatch'
-
     steps:
       - uses: actions/checkout@v3
 
@@ -26,12 +26,11 @@ jobs:
 
       - name: Run glucose_ingest_job
         run: |
-          dagster job execute -f dexcom_dagster/jobs/glucose_ingest_job.py
+          dagster job execute -m dexcom_dagster.definitions -j glucose_ingest_job
 
-  partitioned_dbt_job:
+  dbt_pipeline_job:
     runs-on: ubuntu-latest
     if: github.event.schedule == '30 14 * * *' || github.event_name == 'workflow_dispatch'
-
     steps:
       - uses: actions/checkout@v3
 
@@ -44,14 +43,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run partitioned_dbt_job
+      - name: Run dbt_pipeline_job
         run: |
-          dagster job execute -f dexcom_dagster/jobs/dbt_pipeline_job.py
+          dagster job execute -m dexcom_dagster.definitions -j dbt_pipeline_job
 
   export_job:
     runs-on: ubuntu-latest
     if: github.event.schedule == '35 14 * * *' || github.event_name == 'workflow_dispatch'
-
     steps:
       - uses: actions/checkout@v3
 
@@ -66,4 +64,4 @@ jobs:
 
       - name: Run export_job
         run: |
-          dagster job execute -f dexcom_dagster/jobs/export_job.py
+          dagster job execute -m dexcom_dagster.definitions -j export_job
