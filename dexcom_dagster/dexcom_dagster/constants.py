@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
-from dexcom_dagster.utils.env import load_environment
+from .utils.env import load_environment
+
 
 # Load environment (.env.dev or .env.prod)
 load_environment()

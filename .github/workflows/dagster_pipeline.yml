@@ -26,7 +26,8 @@ jobs:
 
       - name: Run glucose_ingest_job
         run: |
-          dagster job execute -m dexcom_dagster.dexcom_dagster.definitions -j glucose_ingest_job
+          dagster job execute -m dexcom_dagster.definitions -j glucose_ingest_job
+        working-directory: dexcom_dagster
 
   dbt_pipeline_job:
     runs-on: ubuntu-latest
@@ -43,9 +44,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run dbt_pipeline_job
+      - name: Run dbt build for yesterday
         run: |
-          dagster job execute -m dexcom_dagster.dexcom_dagster.definitions -j dbt_pipeline_job
+          YESTERDAY=$(date -u -d "yesterday" +%Y-%m-%d)
+          dbt build --project-dir ../dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR --vars "{\"start_date\": \"${YESTERDAY}\", \"end_date\": \"${YESTERDAY}\"}"
+        working-directory: dexcom_dagster
 
   export_job:
     runs-on: ubuntu-latest
@@ -64,4 +67,5 @@ jobs:
 
       - name: Run export_job
         run: |
-          dagster job execute -m dexcom_dagster.dexcom_dagster.definitions -j export_job
+          dagster job execute -m dexcom_dagster.definitions -j export_job
+        working-directory: dexcom_dagster
