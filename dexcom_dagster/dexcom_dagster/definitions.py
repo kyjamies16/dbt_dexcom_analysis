@@ -14,7 +14,7 @@ from .assets.export_mart_to_parquet_and_upload import export_glucose_to_parquet_
 
 from .jobs.export_job import export_job
 from .jobs.glucose_ingest_job import glucose_ingest_job
-from dexcom_dagster.jobs.dbt_pipeline_job import partitioned_dbt_job
+from .jobs.dbt_pipeline_job import partitioned_dbt_job
 
 from .schedules.schedules import schedules
 
