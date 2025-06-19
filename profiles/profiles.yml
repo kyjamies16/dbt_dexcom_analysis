@@ -1,0 +1,14 @@
+dexcom_glucose_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: dexcom_glucose_analytics/dbt_duckdb_dev.db
+      schema: main
+      threads: 1
+
+    prod:
+      type: duckdb
+      path: dbt_duckdb_prod.db
+      schema: main
+      threads: 1

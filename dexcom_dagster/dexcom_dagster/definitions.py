@@ -4,7 +4,6 @@ from dagster_dbt import DbtCliResource
 
 from .constants import (
     DBT_PROJECT_PATH,
-    DBT_PROFILES_DIR,
     DBT_TARGET,
 ) 
 
@@ -21,7 +20,7 @@ from .schedules.schedules import schedules
 # Dagster resource used in definitions.py
 dbt = DbtCliResource(
     project_dir=str(DBT_PROJECT_PATH),
-    profiles_dir=DBT_PROFILES_DIR,
+    profiles_dir="profiiles",
     target=DBT_TARGET,
     working_directory=str(DBT_PROJECT_PATH),
     global_config_flags=["--debug"],
