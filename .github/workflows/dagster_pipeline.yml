@@ -1,16 +1,17 @@
 name: Daily Dagster Pipelines
 
+# 🗓️ Schedule: Daily in UTC + allow manual runs
 on:
   schedule:
-    - cron: "25 14 * * *" # glucose_ingest_job -> 9:25 AM Central == 14:25 UTC
-    - cron: "30 14 * * *" # dbt_pipeline_job -> 9:30 AM Central == 14:30 UTC
-    - cron: "35 14 * * *" # export_job -> 9:35 AM Central == 14:35 UTC
+    - cron: "25 14 * * *" # glucose_ingest_job → 9:25 AM Central == 14:25 UTC
+    - cron: "30 14 * * *" # dbt_pipeline_job → 9:30 AM Central == 14:30 UTC
+    - cron: "35 14 * * *" # export_job → 9:35 AM Central == 14:35 UTC
   workflow_dispatch:
 
 jobs:
+  # 1️⃣ INGESTION — run first, insert raw data
   glucose_ingest_job:
     runs-on: ubuntu-latest
-    if: github.event.schedule == '25 14 * * *' || github.event_name == 'workflow_dispatch'
     env:
       DBT_PROFILES_DIR: profiles
     steps:
@@ -25,20 +26,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ✅ NEW: Ensure manifest is built fresh for Dagster
-      - name: Install dbt packages & build manifest
-        run: |
-          dbt deps --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
-          dbt compile --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
-
+      # ✅ Ingest: no dbt build here, just Python inserts
       - name: Run glucose_ingest_job
         run: |
           dagster job execute -m dexcom_dagster.definitions -j glucose_ingest_job
         working-directory: dexcom_dagster
 
+  # 2️⃣ DBT PIPELINE — run after ingestion
   dbt_pipeline_job:
     runs-on: ubuntu-latest
-    if: github.event.schedule == '30 14 * * *' || github.event_name == 'workflow_dispatch'
+    needs: glucose_ingest_job # ✅ Waits for ingestion to finish
     env:
       DBT_PROFILES_DIR: profiles
     steps:
@@ -53,7 +50,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Install dbt packages & build manifest
+      - name: Install dbt packages & compile manifest
         run: |
           dbt deps --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
           dbt compile --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
@@ -63,9 +60,10 @@ jobs:
           YESTERDAY=$(date -u -d "yesterday" +%Y-%m-%d)
           dbt build --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR --vars "{\"start_date\": \"${YESTERDAY}\", \"end_date\": \"${YESTERDAY}\"}"
 
+  # 3️⃣ EXPORT — run after dbt pipeline, when tables & manifest are guaranteed fresh
   export_job:
     runs-on: ubuntu-latest
-    if: github.event.schedule == '35 14 * * *' || github.event_name == 'workflow_dispatch'
+    needs: dbt_pipeline_job # ✅ Waits for dbt pipeline to finish
     env:
       DBT_PROFILES_DIR: profiles
     steps:
@@ -80,7 +78,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Install dbt packages & build manifest
+      # ✅ Compile manifest again to catch any last-second changes (cheap & safe)
+      - name: Install dbt packages & compile manifest
         run: |
           dbt deps --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
           dbt compile --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
