@@ -53,13 +53,13 @@ jobs:
 
       - name: Install dbt packages & compile manifest
         run: |
-          dbt deps --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
-          dbt compile --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
+          dbt deps --target prod --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
+          dbt compile --target prod --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
 
       - name: Run dbt build for yesterday
         run: |
           YESTERDAY=$(date -u -d "yesterday" +%Y-%m-%d)
-          dbt build --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR --vars "{\"start_date\": \"${YESTERDAY}\", \"end_date\": \"${YESTERDAY}\"}"
+          dbt build --target prod --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR --vars "{\"start_date\": \"${YESTERDAY}\", \"end_date\": \"${YESTERDAY}\"}"
 
   # 3️⃣ EXPORT — run after dbt pipeline
   export_job:
@@ -84,8 +84,8 @@ jobs:
 
       - name: Install dbt packages & compile manifest
         run: |
-          dbt deps --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
-          dbt compile --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
+          dbt deps --target prod --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
+          dbt compile --target prod --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
 
       - name: Run export_job
         run: |
