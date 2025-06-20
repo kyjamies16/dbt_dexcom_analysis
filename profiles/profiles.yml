@@ -3,7 +3,7 @@ dexcom_glucose_analytics:
   outputs:
     dev:
       type: duckdb
-      path: C:/Users/krjam/dexcom/dbt_duckdb_dev.db
+      path: ../dbt_duckdb_dev.db
       schema: main
       threads: 1
 
