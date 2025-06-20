@@ -7,3 +7,4 @@ defs_ingest = Definitions(
     assets=[ingest_glucose_readings],
     jobs=[glucose_ingest_job],
 )
+

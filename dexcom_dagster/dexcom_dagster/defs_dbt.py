@@ -1,7 +1,7 @@
 from dagster import Definitions
 from dagster_dbt import DbtCliResource
 
-from .constants import (
+from .dbt_constants import (
     DBT_PROJECT_PATH,
     DBT_TARGET,
     DBT_PROFILES_DIR
@@ -27,12 +27,12 @@ dbt = DbtCliResource(
 
 defs_dbt = Definitions(
     assets=[
-        all_dbt_assets,                         # the dbt manifest models
-        export_glucose_to_parquet_and_upload,   # the export mart step depends on dbt mart
+        all_dbt_assets,                         
+        export_glucose_to_parquet_and_upload,   
     ],
     jobs=[
-        partitioned_dbt_job,   # your main dbt pipeline job
-        export_job,            # upload to S3: works on the mart → needs dbt pipeline to run first
+        partitioned_dbt_job,   
+        export_job,            
     ],
     schedules=schedules,
     resources={

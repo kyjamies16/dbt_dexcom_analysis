@@ -10,7 +10,7 @@ from dagster_dbt import (
   DagsterDbtTranslator,
   default_metadata_from_dbt_resource_props,
 )
-from ..constants import dbt_manifest_path
+from dbt_constants import dbt_manifest_path
 
 
 # --------------------------

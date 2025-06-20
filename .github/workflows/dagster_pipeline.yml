@@ -26,7 +26,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ✅ Pure Python: no dbt needed
       - name: Run glucose_ingest_job
         run: |
           dagster job execute -m dexcom_dagster.defs_ingest -j glucose_ingest_job
@@ -35,7 +34,7 @@ jobs:
   # 2️⃣ DBT PIPELINE — run after ingestion
   dbt_pipeline_job:
     runs-on: ubuntu-latest
-    needs: glucose_ingest_job # ✅ Waits for ingestion
+    needs: glucose_ingest_job
     env:
       DBT_PROFILES_DIR: profiles
     steps:
@@ -63,7 +62,7 @@ jobs:
   # 3️⃣ EXPORT — run after dbt pipeline
   export_job:
     runs-on: ubuntu-latest
-    needs: dbt_pipeline_job # ✅ Waits for dbt pipeline
+    needs: dbt_pipeline_job
     env:
       DBT_PROFILES_DIR: profiles
     steps:
@@ -78,7 +77,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ✅ Ensure manifest is fresh in case anything changed
       - name: Install dbt packages & compile manifest
         run: |
           dbt deps --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
