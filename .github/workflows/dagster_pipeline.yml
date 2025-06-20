@@ -36,11 +36,9 @@ jobs:
         run: |
           echo "Working dir: $(pwd)"
           echo "Expected DuckDB file: dbt_duckdb_prod.db"
-          ls -lh ../dbt_duckdb_prod.db
-          echo "Contents of dexcom_dagster:"
-          ls -lh dexcom_dagster/
-          echo "Contents of repo root:"
-          ls -lh .
+          ls -lh dbt_duckdb_prod.db
+          echo "Contents of dexcom_dagster folder:"
+          ls -lh dexcom_dagster
 
   # 2️⃣ DBT PIPELINE — run after ingestion
   dbt_pipeline_job:
