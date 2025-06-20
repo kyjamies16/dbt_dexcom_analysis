@@ -3,12 +3,12 @@ dexcom_glucose_analytics:
   outputs:
     dev:
       type: duckdb
-      path: ../dbt_duckdb_dev.db
+      path: dbt_duckdb_dev.db
       schema: main
       threads: 1
 
     prod:
       type: duckdb
-      path: ../dbt_duckdb_prod.db
+      path: dbt_duckdb_prod.db
       schema: main
       threads: 1
