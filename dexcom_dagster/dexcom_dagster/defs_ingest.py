@@ -1,5 +1,4 @@
 from dagster import Definitions
-
 from .assets.ingest_glucose_readings import ingest_glucose_readings
 from .jobs.glucose_ingest_job import glucose_ingest_job
 
