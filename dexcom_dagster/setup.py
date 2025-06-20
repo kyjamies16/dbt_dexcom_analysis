@@ -7,7 +7,6 @@ setup(
     install_requires=[
         "dagster",
         "dagster-dbt",
-        "dbt-snowflake<1.10",
         "dbt-duckdb<1.10",
     ],
     extras_require={

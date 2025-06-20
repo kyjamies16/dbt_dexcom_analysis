@@ -29,7 +29,7 @@ jobs:
 
       - name: Run glucose_ingest_job
         run: |
-          dagster job execute -m dexcom_dagster.defs_ingest -j glucose_ingest_job
+          dagster job execute -m dexcom_dagster.dexcom_dagster.defs_ingest -j glucose_ingest_job
         working-directory: .
 
       - name: Show DB file for sanity check
@@ -101,5 +101,5 @@ jobs:
 
       - name: Run export_job
         run: |
-          dagster job execute -m dexcom_dagster.defs_dbt -j export_job
+          dagster job execute -m dexcom_dagster.dexcom_dagster.defs_dbt -j export_job
         working-directory: .
