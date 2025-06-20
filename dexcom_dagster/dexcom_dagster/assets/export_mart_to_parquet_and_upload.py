@@ -2,6 +2,9 @@ import os
 import duckdb
 import boto3
 from dagster import asset, MetadataValue, Output, Failure
+from ..core_constants import DB_PATH
+
+
 
 @asset
 def export_glucose_to_parquet_and_upload(context):
@@ -13,7 +16,7 @@ def export_glucose_to_parquet_and_upload(context):
     """
 
     # Load config from env
-    db_path = os.getenv("DATABASE_PATH", "dbt_duckdb_prod.db")
+    db_path = DB_PATH
     parquet_file = os.getenv("PARQUET_FILENAME", "mart_glucose_readings.parquet")
     bucket_name = os.getenv("AWS_S3_BUCKET_NAME")
     s3_object_name = parquet_file

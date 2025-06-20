@@ -4,6 +4,8 @@ import duckdb
 from dagster import AssetExecutionContext, asset, MetadataValue
 from dotenv import load_dotenv
 from pydexcom import Dexcom
+from ..core_constants import DB_PATH
+
 
 load_dotenv()
 
@@ -12,7 +14,7 @@ def ingest_glucose_readings(context: AssetExecutionContext) -> pd.DataFrame:
     # Load credentials and DB path
     username = os.getenv("DEXCOM_USERNAME")
     password = os.getenv("DEXCOM_PASSWORD")
-    db_path = os.getenv("DATABASE_PATH")
+    db_path = DB_PATH
 
     if not username or not password or not db_path:
         raise ValueError("Missing one or more environment variables: DEXCOM_USERNAME, DEXCOM_PASSWORD, DATABASE_PATH")
