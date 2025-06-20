@@ -30,12 +30,12 @@ jobs:
       - name: Run glucose_ingest_job
         run: |
           dagster job execute -m dexcom_dagster.defs_ingest -j glucose_ingest_job
-        working-directory: dexcom_dagster
+        working-directory: .
 
       - name: Show DB file for sanity check
         run: |
           echo "Working dir: $(pwd)"
-          echo "Expected DuckDB file: ../dbt_duckdb_prod.db"
+          echo "Expected DuckDB file: dbt_duckdb_prod.db"
           ls -lh ../dbt_duckdb_prod.db
           echo "Contents of dexcom_dagster:"
           ls -lh .
@@ -102,4 +102,4 @@ jobs:
       - name: Run export_job
         run: |
           dagster job execute -m dexcom_dagster.defs_dbt -j export_job
-        working-directory: dexcom_dagster
+        working-directory: .
