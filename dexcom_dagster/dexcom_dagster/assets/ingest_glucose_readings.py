@@ -20,10 +20,8 @@ def ingest_glucose_readings(context: AssetExecutionContext):
     username = os.getenv("DEXCOM_USERNAME")
     password = os.getenv("DEXCOM_PASSWORD")
     bucket = os.getenv("AWS_S3_BUCKET_NAME")
-    print("AWS_S3_BUCKET_NAME =", bucket)
 
-
-
+    # Validate required env vars
     if not username or not password or not bucket:
         raise ValueError("Missing DEXCOM_USERNAME, DEXCOM_PASSWORD, or BUCKET_NAME")
 
