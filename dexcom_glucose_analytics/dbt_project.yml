@@ -23,10 +23,6 @@ models:
       +schema: staging
       +materialized: view
 
-    intermediate:
-      +schema: intermediate
-      +materialized: table
-
     mart:
       +schema: mart
       +materialized: table

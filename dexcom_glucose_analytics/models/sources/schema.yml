@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: stg_dexcom_readings
+    description: "Deduplicated glucose readings pulled directly from S3 parquet files for Dexcom."
+    columns:
+      - name: reading_timestamp
+        description: "Central Timezone timestamp for the glucose reading"
+        tests:
+          - not_null
+          - unique
+
+      - name: glucose_mg_dl
+        description: "Glucose value in mg/dL"
+        tests:
+          - not_null
+
+  - name: stg_tconnect_readings
+    description: "Deduplicated glucose readings pulled directly from S3 parquet files for Tconnect."
+    columns:
+      - name: reading_timestamp
+        description: "Central Timezone timestamp for the glucose reading"
+        tests:
+          - not_null
+          - unique
+
+      - name: glucose_mg_dl
+        description: "Glucose value in mg/dL"
+        tests:
+          - not_null

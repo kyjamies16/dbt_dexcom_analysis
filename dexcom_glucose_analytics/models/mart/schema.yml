@@ -32,15 +32,3 @@ models:
           - not_null
           - accepted_values:
               values: [true, false]
-
-      - name: delta_glucose
-        description: Change from previous reading
-        tests: [] # Allow nulls for first reading of the day
-
-      - name: week_start_date
-        tests:
-          - not_null
-
-      - name: month_start_date
-        tests:
-          - not_null
