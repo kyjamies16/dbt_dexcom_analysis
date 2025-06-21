@@ -5,15 +5,17 @@ sources:
     schema: main
     tables:
       - name: dexcom_glucose_readings
-        identifier: stg_pydex_readings
+        external:
+          location: "s3://chumbucket4356/dexcom/*/"
+          file_format: parquet
         description: "Glucose readings ingested via PyDexcom API."
         loaded_at_field: reading_ts
         freshness:
           warn_after:
-            count: 2
+            count: 24
             period: hour
           error_after:
-            count: 6
+            count: 72
             period: hour
         columns:
           - name: reading_ts
@@ -29,7 +31,9 @@ sources:
     schema: main
     tables:
       - name: t_connect_glucose_readings
-        identifier: stg_tconnect_csv_data
+        external:
+          location: "s3://chumbucket4356/t_connect/*.parquet"
+          file_format: parquet
         description: "Backfilled glucose data from t:connect export."
         columns:
           - name: reading_timestamp

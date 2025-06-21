@@ -1,8 +1,7 @@
 WITH source AS (
   SELECT
     *
-  FROM {{ source('dexcom', 'dexcom_glucose_readings') }}
-),
+  FROM read_parquet('s3://chumbucket4356/dexcom/*.parquet')),
 
 renamed AS (
   SELECT

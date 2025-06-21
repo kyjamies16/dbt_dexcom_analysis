@@ -8,13 +8,15 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 1️⃣ INGESTION — run first
+  # INGESTION — run first
   glucose_ingest_job:
     runs-on: ubuntu-latest
     env:
       DEXCOM_USERNAME: ${{ secrets.DEXCOM_USERNAME }}
       DEXCOM_PASSWORD: ${{ secrets.DEXCOM_PASSWORD }}
-      DATABASE_PATH: dbt_duckdb_prod.db
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-2
     steps:
       - uses: actions/checkout@v3
 
@@ -32,21 +34,16 @@ jobs:
           dagster job execute -m dexcom_dagster.dexcom_dagster.defs_ingest -j glucose_ingest_job
         working-directory: .
 
-      - name: Show DB file for sanity check
-        run: |
-          echo "Working dir: $(pwd)"
-          echo "Expected DuckDB file: dbt_duckdb_prod.db"
-          ls -lh dbt_duckdb_prod.db
-          echo "Contents of dexcom_dagster folder:"
-          ls -lh dexcom_dagster
-
-  # 2️⃣ DBT PIPELINE — run after ingestion
+  # 2️DBT PIPELINE — run after ingestion
   dbt_pipeline_job:
     runs-on: ubuntu-latest
     needs: glucose_ingest_job
     env:
       DBT_PROFILES_DIR: profiles
       DBT_TARGET: prod
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-2
     steps:
       - uses: actions/checkout@v3
 
@@ -58,6 +55,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Download latest DB from S3
+        run: |
+          aws s3 cp s3://${{ secrets.BUCKET_NAME }}/dbt_duckdb_prod.db dbt_duckdb_prod.db
 
       - name: Install dbt packages & compile manifest
         run: |
@@ -70,7 +71,7 @@ jobs:
           dbt build --target $DBT_TARGET --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR --vars "{\"start_date\": \"${YESTERDAY}\", \"end_date\": \"${YESTERDAY}\"}"
         working-directory: .
 
-  # 3️⃣ EXPORT — run after dbt pipeline
+  # EXPORT — run after dbt pipeline
   export_job:
     runs-on: ubuntu-latest
     needs: dbt_pipeline_job
@@ -80,6 +81,9 @@ jobs:
       DATABASE_PATH: dbt_duckdb_prod.db
       PARQUET_FILENAME: ${{ secrets.PARQUET_FILENAME }}
       BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
     steps:
       - uses: actions/checkout@v3
 
@@ -91,6 +95,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Download latest DB from S3
+        run: |
+          aws s3 cp s3://${{ secrets.BUCKET_NAME }}/dbt_duckdb_prod.db dbt_duckdb_prod.db
 
       - name: Install dbt packages & compile manifest
         run: |

@@ -6,9 +6,14 @@ dexcom_glucose_analytics:
       path: dbt_duckdb_dev.db
       schema: main
       threads: 1
-
     prod:
       type: duckdb
       path: dbt_duckdb_prod.db
       schema: main
       threads: 1
+      extensions:
+        - httpfs
+      settings:
+        s3_region: us-east-2
+        s3_access_key_id: "{{ env_var('AWS_ACCESS_KEY_ID') }}"
+        s3_secret_access_key: "{{ env_var('AWS_SECRET_ACCESS_KEY') }}"
