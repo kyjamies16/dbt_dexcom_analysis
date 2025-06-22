@@ -74,12 +74,13 @@ jobs:
       - name: Run dbt build (conditional full refresh)
         run: |
           if [ "${{ github.event.inputs.full_refresh }}" == "true" ]; then
-           echo "Running FULL REFRESH"
-           dbt build --target $DBT_TARGET --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR --full-refresh
+            echo "Running FULL REFRESH"
+            dbt build --target $DBT_TARGET --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR --full-refresh
           else
-           echo "Running INCREMENTAL build"
-           YESTERDAY=$(date -u -d "yesterday" +%Y-%m-%d)
-           dbt build --target $DBT_TARGET --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR --vars "{\"start_date\": \"${YESTERDAY}\", \"end_date\": \"${YESTERDAY}\"}"
+            echo "Running INCREMENTAL build for yesterday"
+            YESTERDAY=$(date -u -d "yesterday" +%Y-%m-%d)
+            dbt build --target $DBT_TARGET --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR --vars "{\"start_date\": \"${YESTERDAY}\", \"end_date\": \"${YESTERDAY}\"}"
+          fi
         working-directory: .
 
   # EXPORT — run after dbt pipeline
