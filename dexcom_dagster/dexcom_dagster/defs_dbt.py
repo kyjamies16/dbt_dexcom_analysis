@@ -1,5 +1,7 @@
 from dagster import Definitions
 from dagster_dbt import DbtCliResource
+from .assets.ingest_glucose_readings import ingest_glucose_readings
+
 
 from .dbt_constants import (
     DBT_PROJECT_PATH,
@@ -28,7 +30,8 @@ dbt = DbtCliResource(
 defs_dbt = Definitions(
     assets=[
         all_dbt_assets,                         
-        export_glucose_to_parquet_and_upload,   
+        export_glucose_to_parquet_and_upload,
+        ingest_glucose_readings,    
     ],
     jobs=[
         partitioned_dbt_job,   
