@@ -1,16 +1,8 @@
 {{ config(
-  materialized='incremental',
-  unique_key='reading_timestamp',
+  materialized='table',
   on_schema_change='sync_all_columns'
 ) }}
 
-{% set max_existing_ts %}
-  {% if is_incremental() %}
-    (SELECT MAX(reading_timestamp) FROM {{ this }})
-  {% else %}
-    '1900-01-01'  
-  {% endif %}
-{% endset %}
 
 -- Dexcom staging data (from S3 parquet daily)
 WITH dexcom AS (
