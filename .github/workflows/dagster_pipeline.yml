@@ -6,6 +6,11 @@ on:
     - cron: "30 14 * * *" # dbt_pipeline_job → 9:30 AM Central == 14:30 UTC
     - cron: "35 14 * * *" # export_job → 9:35 AM Central == 14:35 UTC
   workflow_dispatch:
+    inputs:
+      full_refresh:
+        description: "Run a full refresh?"
+        required: false
+        default: "false"
 
 jobs:
   # INGESTION — run first
@@ -66,10 +71,15 @@ jobs:
           dbt deps --target $DBT_TARGET --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
           dbt compile --target $DBT_TARGET --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
 
-      - name: Run dbt build for yesterday
+      - name: Run dbt build (conditional full refresh)
         run: |
-          YESTERDAY=$(date -u -d "yesterday" +%Y-%m-%d)
-          dbt build --target $DBT_TARGET --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR --vars "{\"start_date\": \"${YESTERDAY}\", \"end_date\": \"${YESTERDAY}\"}"
+          if [ "${{ github.event.inputs.full_refresh }}" == "true" ]; then
+           echo "Running FULL REFRESH"
+           dbt build --target $DBT_TARGET --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR --full-refresh
+          else
+           echo "Running INCREMENTAL build"
+           YESTERDAY=$(date -u -d "yesterday" +%Y-%m-%d)
+           dbt build --target $DBT_TARGET --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR --vars "{\"start_date\": \"${YESTERDAY}\", \"end_date\": \"${YESTERDAY}\"}"
         working-directory: .
 
   # EXPORT — run after dbt pipeline
