@@ -10,7 +10,7 @@ WITH dexcom AS (
     reading_timestamp,
     glucose_mg_dl
   FROM {{ ref('stg_dexcom_readings') }}
-  WHERE reading_timestamp > {{ max_existing_ts }}
+  
 ),
 
 -- t:connect staging data (from S3 parquet backfill)
@@ -19,7 +19,6 @@ tconnect AS (
     reading_timestamp,
     glucose_mg_dl
   FROM {{ ref('stg_tconnect_readings') }}
-  WHERE reading_timestamp > {{ max_existing_ts }}
 ),
 
 -- Union them together & deduplicate by timestamp
@@ -45,15 +44,14 @@ SELECT
   reading_timestamp,
   glucose_mg_dl,
   CASE
-    WHEN glucose_mg_dl BETWEEN 70
-    AND 180 THEN TRUE
+    WHEN glucose_mg_dl BETWEEN 70 AND 180 THEN TRUE
     ELSE FALSE
   END AS is_in_range,
   CAST(reading_timestamp AS DATE) AS reading_date,
   {{ time_bucket('reading_timestamp') }} AS time_of_day_bucket,
   CASE
     WHEN glucose_mg_dl < 70 THEN 'Low'
-    WHEN glucose_mg_dl <= 180 THEN 'In Range'
+    WHEN glucose_mg_dl BETWEEN 70 AND 180 THEN 'In Range'
     ELSE 'High'
   END AS glucose_range_label
 FROM deduped
