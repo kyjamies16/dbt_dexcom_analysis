@@ -100,6 +100,11 @@ jobs:
         run: |
           aws s3 cp s3://${{ env.AWS_S3_BUCKET_NAME }}/dbt_duckdb_prod.db dbt_duckdb_prod.db
 
+      - name: Install dbt packages and compile
+        run: |
+          dbt deps --target $DBT_TARGET --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
+          dbt compile --target $DBT_TARGET --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
+
       - name: Run Dagster export_glucose_to_parquet_job
         run: |
           dagster job execute -m dexcom_dagster.dexcom_dagster.defs_dbt -j export_job
