@@ -1,69 +1,65 @@
 import os
 import pandas as pd
-import duckdb
+import boto3
+from datetime import datetime
 from dagster import AssetExecutionContext, asset, MetadataValue
 from dotenv import load_dotenv
 from pydexcom import Dexcom
+from zoneinfo import ZoneInfo
+from ..core_constants import dotenv_path
 
-load_dotenv()
+load_dotenv(dotenv_path) 
 
 @asset
-def ingest_glucose_readings(context: AssetExecutionContext) -> pd.DataFrame:
-    # Load credentials and DB path
+def ingest_glucose_readings(context: AssetExecutionContext):
+    """
+    Fetch Dexcom readings & write them as Parquet to S3.
+    """
+
+    # Env vars
     username = os.getenv("DEXCOM_USERNAME")
     password = os.getenv("DEXCOM_PASSWORD")
-    db_path = os.getenv("DATABASE_PATH")
+    bucket = os.getenv("AWS_S3_BUCKET_NAME")
 
-    if not username or not password or not db_path:
-        raise ValueError("Missing one or more environment variables: DEXCOM_USERNAME, DEXCOM_PASSWORD, DATABASE_PATH")
+    # Validate required env vars
+    if not username or not password or not bucket:
+        raise ValueError("Missing DEXCOM_USERNAME, DEXCOM_PASSWORD, or BUCKET_NAME")
 
-    # Fetch from Dexcom
-    try:
-        dexcom = Dexcom(username=username, password=password)
-        readings = dexcom.get_glucose_readings(1440)
-    except Exception as e:
-        context.log.error("Dexcom authentication or fetch failed", exc_info=True)
-        raise
+    # Fetch Dexcom readings
+   
+    dexcom = Dexcom(username=username, password=password)
+    readings = dexcom.get_glucose_readings(1440)
 
     if not readings:
-        context.log.info("⚠️ No glucose readings returned from Dexcom.")
-        return pd.DataFrame()
+        context.log.info("⚠️ No glucose readings returned.")
+        return
 
-    # Build DataFrame
+    #3 Make DataFrame
     df = pd.DataFrame(
         [(r.datetime, r.mg_dl) for r in readings],
         columns=["reading_ts", "glucose_mg_dl"]
     ).drop_duplicates(subset="reading_ts")
 
-    # Insert new readings into DuckDB
-    try:
-        with duckdb.connect(db_path) as con:
-            con.execute("""
-                CREATE TABLE IF NOT EXISTS stg_pydex_readings (
-                    reading_ts TIMESTAMP,
-                    glucose_mg_dl INTEGER
-                )
-            """)
-            con.register("df", df)
-            con.execute("CREATE OR REPLACE TEMP TABLE new_data AS SELECT * FROM df")
-            con.execute("""
-                INSERT INTO stg_pydex_readings
-                SELECT * FROM new_data
-                WHERE NOT EXISTS (
-                    SELECT 1 FROM stg_pydex_readings
-                    WHERE stg_pydex_readings.reading_ts = new_data.reading_ts
-                )
-            """)
-    except Exception as e:
-        context.log.error("Failed to insert into DuckDB", exc_info=True)
-        raise
+    # Write to local Parquet
+    now = datetime.now(ZoneInfo("US/Central")).strftime("%Y-%m-%d-%H%M%S")
+    local_file = f"glucose_{now}.parquet"
+    df.to_parquet(local_file, index=False)
 
-    context.log.info(f"✅ Inserted {len(df)} new rows into stg_pydex_readings.")
+    # Upload to S3
+    s3 = boto3.client(
+        "s3",
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    )
+    s3_key = f"glucose_readings/{local_file}"
+
+    s3.upload_file(local_file, bucket, s3_key, ExtraArgs={"ACL": "bucket-owner-full-control"})
+
+    context.log.info(f"✅ Uploaded new Parquet: s3://{bucket}/{s3_key}")
 
     context.add_output_metadata({
         "row_count": len(df),
         "latest_timestamp": str(df['reading_ts'].max()),
-        "preview": MetadataValue.md(df.head().to_markdown())
+        "preview": MetadataValue.md(df.head().to_markdown()),
+        "s3_key": s3_key,
     })
-
-    return df

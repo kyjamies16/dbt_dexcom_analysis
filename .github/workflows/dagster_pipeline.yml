@@ -1,6 +1,5 @@
 name: Daily Dagster Pipelines
 
-# 🗓️ Schedule: Daily in UTC + allow manual runs
 on:
   schedule:
     - cron: "25 14 * * *" # glucose_ingest_job → 9:25 AM Central == 14:25 UTC
@@ -9,11 +8,16 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 1️⃣ INGESTION — run first, insert raw data
+  # INGESTION — run first
   glucose_ingest_job:
     runs-on: ubuntu-latest
     env:
-      DBT_PROFILES_DIR: profiles
+      DEXCOM_USERNAME: ${{ secrets.DEXCOM_USERNAME }}
+      DEXCOM_PASSWORD: ${{ secrets.DEXCOM_PASSWORD }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
+      AWS_DEFAULT_REGION: us-east-2
     steps:
       - uses: actions/checkout@v3
 
@@ -21,23 +25,26 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ✅ Ingest: no dbt build here, just Python inserts
       - name: Run glucose_ingest_job
         run: |
-          dagster job execute -m dexcom_dagster.definitions -j glucose_ingest_job
-        working-directory: dexcom_dagster
+          dagster job execute -m dexcom_dagster.dexcom_dagster.defs_ingest -j glucose_ingest_job
 
-  # 2️⃣ DBT PIPELINE — run after ingestion
+  # DBT PIPELINE — run after ingestion
   dbt_pipeline_job:
     runs-on: ubuntu-latest
-    needs: glucose_ingest_job # ✅ Waits for ingestion to finish
+    needs: glucose_ingest_job
     env:
       DBT_PROFILES_DIR: profiles
+      DBT_TARGET: prod
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
+      AWS_DEFAULT_REGION: us-east-2
     steps:
       - uses: actions/checkout@v3
 
@@ -45,27 +52,40 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Install dbt packages & compile manifest
+      - name: Download latest DuckDB file from S3
         run: |
-          dbt deps --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
-          dbt compile --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
+          aws s3 cp s3://${{ env.AWS_S3_BUCKET_NAME }}/dbt_duckdb_prod.db dbt_duckdb_prod.db
 
-      - name: Run dbt build for yesterday
+      - name: Install dbt packages and compile
         run: |
-          YESTERDAY=$(date -u -d "yesterday" +%Y-%m-%d)
-          dbt build --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR --vars "{\"start_date\": \"${YESTERDAY}\", \"end_date\": \"${YESTERDAY}\"}"
+          dbt deps --target $DBT_TARGET --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
+          dbt compile --target $DBT_TARGET --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
 
-  # 3️⃣ EXPORT — run after dbt pipeline, when tables & manifest are guaranteed fresh
+      - name: Run dbt build (incremental or full refresh)
+        run: |
+          dbt build --target $DBT_TARGET --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
+
+      - name: Upload updated DuckDB back to S3
+        run: |
+          aws s3 cp dbt_duckdb_prod.db s3://${{ env.AWS_S3_BUCKET_NAME }}/dbt_duckdb_prod.db
+
+  # EXPORT JOB — run after dbt pipeline using Dagster asset/job
   export_job:
     runs-on: ubuntu-latest
-    needs: dbt_pipeline_job # ✅ Waits for dbt pipeline to finish
+    needs: dbt_pipeline_job
     env:
       DBT_PROFILES_DIR: profiles
+      DBT_TARGET: prod
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
+      AWS_DEFAULT_REGION: us-east-2
+      PARQUET_FILENAME: mart_glucose_readings.parquet
     steps:
       - uses: actions/checkout@v3
 
@@ -73,18 +93,20 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ✅ Compile manifest again to catch any last-second changes (cheap & safe)
-      - name: Install dbt packages & compile manifest
+      - name: Download latest DuckDB DB
         run: |
-          dbt deps --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
-          dbt compile --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
+          aws s3 cp s3://${{ env.AWS_S3_BUCKET_NAME }}/dbt_duckdb_prod.db dbt_duckdb_prod.db
 
-      - name: Run export_job
+      - name: Install dbt packages and compile
         run: |
-          dagster job execute -m dexcom_dagster.definitions -j export_job
-        working-directory: dexcom_dagster
+          dbt deps --target $DBT_TARGET --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
+          dbt compile --target $DBT_TARGET --project-dir dexcom_glucose_analytics --profiles-dir $DBT_PROFILES_DIR
+
+      - name: Run Dagster export_glucose_to_parquet_job
+        run: |
+          dagster job execute -m dexcom_dagster.dexcom_dagster.defs_dbt -j export_job

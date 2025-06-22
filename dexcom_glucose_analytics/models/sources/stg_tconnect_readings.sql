@@ -1,12 +1,8 @@
 WITH source AS(
   SELECT
     *
-  FROM
-    {{ source(
-      't_connect',
-      't_connect_glucose_readings'
-    ) }}
-),
+  FROM read_parquet('s3://chumbucket4356/t_connect/*.parquet')),
+
 renamed AS (
   SELECT
     CAST(

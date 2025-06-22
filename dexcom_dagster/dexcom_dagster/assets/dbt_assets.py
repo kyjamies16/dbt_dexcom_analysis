@@ -1,5 +1,3 @@
-# dexcom_dagster/assets/dbt_assets_combined.py
-
 import json
 from typing import Any, Mapping
 
@@ -10,7 +8,7 @@ from dagster_dbt import (
   DagsterDbtTranslator,
   default_metadata_from_dbt_resource_props,
 )
-from ..constants import dbt_manifest_path
+from ..dbt_constants import dbt_manifest_path
 
 
 # --------------------------
