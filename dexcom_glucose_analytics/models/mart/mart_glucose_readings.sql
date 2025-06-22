@@ -58,7 +58,7 @@ SELECT
     ELSE FALSE
   END AS is_in_range,
   CAST(reading_timestamp AS DATE) AS reading_date,
-  {{ time_bucket('reading_timestamp') }} AS time_of_day_bucket -- morning, afternoon, evening, night
+  {{ time_bucket('reading_timestamp') }} AS time_of_day_bucket,
   CASE
     WHEN glucose_mg_dl < 70 THEN 'Low'
     WHEN glucose_mg_dl <= 180 THEN 'In Range'
