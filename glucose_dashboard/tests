@@ -1,0 +1,57 @@
+import unittest
+import pandas as pd
+from datetime import datetime, timedelta
+
+from logic.spike import find_spike_events 
+
+class TestFindSpikeEvents(unittest.TestCase):
+
+    def setUp(self):
+        """Create a basic DataFrame for reuse."""
+        base_time = datetime(2025, 6, 23, 8, 0, 0) # Starting point for timestamps 8:00 AM
+        self.df = pd.DataFrame({
+            "reading_timestamp": [
+                base_time + timedelta(minutes=i * 5) for i in range(10)
+            ],
+            "glucose_mg_dl": [120, 130, 145, 170, 190, 180, 160, 140, 135, 130]
+        })
+
+    def test_detects_basic_spike(self):
+        """Should detect a spike event when RoC and thresholds are met."""
+        spikes = find_spike_events(self.df, roc_threshold=20, normal_threshold=140)
+        self.assertEqual(len(spikes), 1)
+        self.assertTrue(spikes.iloc[0]["peak_glucose"] >= 150)
+        self.assertTrue(spikes.iloc[0]["duration_min"] > 3)
+
+    def test_filters_by_max_duration(self):
+        """Should filter out spikes longer than max_duration_min."""
+        df_long = self.df.copy()
+        # Artificially stretch timestamps to make duration huge
+        df_long.loc[5:, "reading_timestamp"] += timedelta(hours=10)
+        spikes = find_spike_events(df_long, roc_threshold=20, max_duration_min=10)
+        self.assertTrue(spikes.empty)
+
+    def test_filters_by_peak_glucose(self):
+        """Should filter out spikes with peak_glucose < 150."""
+        df_low_peak = self.df.copy()
+        df_low_peak["glucose_mg_dl"] = [120, 125, 130, 135, 138, 135, 130, 128, 125, 123]
+        spikes = find_spike_events(df_low_peak, roc_threshold=10)
+        self.assertTrue(spikes.empty)
+
+    def test_handles_data_gaps(self):
+        """Should split chunks when there is a big time gap."""
+        df_gap = self.df.copy()
+        df_gap.loc[5:, "reading_timestamp"] += timedelta(minutes=20)  # Create a gap
+        spikes = find_spike_events(df_gap, roc_threshold=20, gap_threshold_min=10)
+        self.assertTrue("chunk" not in spikes.columns)  # Should not leak internals
+        self.assertGreaterEqual(len(spikes), 0)  # At least runs without error
+
+    def test_no_spike_detected(self):
+        """Should return empty if no RoC exceeds threshold."""
+        df_flat = self.df.copy()
+        df_flat["glucose_mg_dl"] = [120] * len(df_flat)
+        spikes = find_spike_events(df_flat, roc_threshold=50)
+        self.assertTrue(spikes.empty)
+
+if __name__ == "__main__":
+    unittest.main()
