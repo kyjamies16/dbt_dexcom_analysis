@@ -1,201 +1,61 @@
-# Dexcom Glucose Data Pipeline and Dashboard
+# Dexcom Glucose Analysis
 
-## 📈 Overview
+This repository contains a data pipeline and dashboard for processing Dexcom continuous glucose monitoring (CGM) data. It brings together **dbt** for transformations, **Dagster** for orchestration, and **Streamlit** for interactive visualizations.
 
-This project is a **full-stack data pipeline and analytics dashboard** for managing and visualizing **Dexcom blood glucose data**. It combines:
+## Project Overview
+- **dbt project** (`dexcom_glucose_analytics`)
+  - Cleans and transforms raw glucose readings
+  - Produces an analytics-ready mart
+- **Dagster project** (`dexcom_dagster`)
+  - Ingests new readings from the Dexcom API
+  - Triggers dbt models and exports the final parquet file
+- **Streamlit dashboard** (`glucose_dashboard`)
+  - Loads the latest dataset from S3
+  - Displays trend charts and summary statistics
 
-* **dbt** for data modeling, transformation, and testing
-* **Dagster** for orchestration and scheduling
-* **Streamlit** for an interactive web app and dashboards
-
-The pipeline ingests raw data from Dexcom APIs (and/or t\:connect CSV exports), processes it into analytics-ready tables, and serves visual insights via a user-friendly dashboard.
-
----
-
-## 🗂️ Project Structure
-
-```
-root/
-│
-├── dexcom_glucose_analytics/   # dbt project
-│   ├── models/
-│   ├── macros/
-│   ├── seeds/
-│   ├── dbt_project.yml
-│   └── profiles.yml (local or ~/.dbt/profiles.yml)
-│
-├── dexcom_dagster/             # Dagster project
-│   ├── assets/
-│   ├── jobs/
-│   ├── schedules/
-│   ├── definitions.py
-│   └── ...
-│
-├── glucose_dashboard/          # Streamlit app
-│   ├── app.py
-│   ├── utils/
-│   └── ...
-│
-├── .env                        # environment variables (excluded from repo)
-├── requirements.txt            # Python dependencies
-└── README.md                   # You are here!
+## Repository Layout
+```text
+├── dexcom_glucose_analytics/   # dbt models, macros, seeds
+├── dexcom_dagster/             # Dagster assets, jobs and schedules
+├── glucose_dashboard/          # Streamlit application
+├── profiles/                   # sample dbt profiles
+├── scripts/                    # utility scripts for ingestion & export
+└── requirements.txt            # Python dependencies
 ```
 
----
+## Getting Started
+1. **Clone the repository** and install dependencies
+   ```bash
+   git clone https://github.com/yourusername/your-repo.git
+   cd your-repo
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+2. **Configure environment variables** in a `.env` file at the project root
+   ```bash
+   DEXCOM_USERNAME=your_username
+   DEXCOM_PASSWORD=your_password
+   DBT_PROFILE_DIR=./profiles
+   AWS_S3_BUCKET_NAME=your-bucket
+   ```
+3. **Run the pipeline locally**
+   ```bash
+   # Start Dagster webserver
+   dagster dev
+   # In another terminal, launch the dashboard
+   streamlit run glucose_dashboard/app.py
+   ```
+   Dagster jobs can be triggered from the UI at <http://localhost:3000>.
 
-## ⚙️ How It Works
+## Deployment
+Scheduled jobs are defined in `.github/workflows/dagster_pipeline.yml`. They ingest data, run dbt models, and export the updated mart to S3 on a daily cadence.
 
-### 1️⃣ **dbt**
+## Requirements
+- Python 3.10+
+- dbt-core 1.7
+- Dagster 1.6
+- Streamlit 1.45
 
-* **Purpose:** Cleans, transforms, and tests raw glucose data.
-* **Key models:**
-
-  * `stg_pydex_readings`: raw ingested readings.
-  * `int_glucose_readings`: intermediate cleansed version.
-  * `mart_glucose_readings`: final analytics-ready mart.
-* **Run:**
-
-  ```bash
-  dbt run
-  dbt test
-  ```
-
----
-
-### 2️⃣ **Dagster**
-
-* **Purpose:** Orchestrates data ingestion from Dexcom APIs, runs dbt models, and schedules pipeline jobs.
-* **Key jobs:**
-
-  * `glucose_ingest_job`: Ingests new glucose readings.
-  * `partitioned_dbt_job`: Runs dbt transformations.
-* **Run locally:**
-
-  ```bash
-  dagster dev
-  ```
-
-  Open Dagster UI at [http://localhost:3000](http://localhost:3000) to trigger jobs or view logs.
-
----
-
-### 3️⃣ **Streamlit**
-
-* **Purpose:** Interactive web dashboard to explore glucose trends, patterns, and anomalies.
-
-* **Run locally:**
-
-  ```bash
-  streamlit run glucose_dashboard/app.py
-  ```
-
-* **Deploy:**
-
-  * Connect your repo to [Streamlit Cloud](https://streamlit.io/cloud).
-  * Set the app path to `glucose_dashboard/app.py`.
-  * Add required secrets (.env vars) in Streamlit Cloud settings.
-
----
-
-## ✅ Setup Instructions
-
-### 🔑 1. Clone & Install
-
-```bash
-git clone https://github.com/yourusername/your-repo.git
-cd your-repo
-
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
----
-
-### 🔐 2. Configure Environment Variables
-
-Create a `.env` file at the project root:
-
-```bash
-DEXCOM_USERNAME=your_username
-DEXCOM_PASSWORD=your_password
-DATABASE_PATH=path/to/your/duckdb.db
-DBT_PROFILE_DIR=path/to/.dbt
-DAGSTER_HOME=path/to/dagster_home
-```
-
-Add `.env` to `.gitignore`!
-
----
-
-### ⚡ 3. Run the Pipeline
-
-* **Ingest new data:**
-
-  ```bash
-  dagster dev
-  # or trigger ingest job from Dagster UI
-  ```
-
-* **Transform data:**
-
-  ```bash
-  dbt run
-  ```
-
-* **Launch dashboard:**
-
-  ```bash
-  streamlit run glucose_dashboard/app.py
-  ```
-
----
-
-## 📅 Deployment
-
-* **Dagster:** can be deployed using Dagster Cloud or a server.
-* **Streamlit:** can be deployed with Streamlit Cloud (recommended for quick demos).
-
----
-
-## 🧰 Requirements
-
-* Python >= 3.10
-* dbt-core >= 1.7
-* Dagster >= 1.7
-* Streamlit >= 1.30
-* DuckDB (used as local warehouse)
-
----
-
-## 🗝️ Secrets
-
-Make sure to store secrets like Dexcom credentials securely. Use `.env` locally and Streamlit/Dagster Cloud secrets in production.
-
----
-
-## 🧑‍💻 Author
-
-**Kyle Jamieson**
-Data Analyst / Analytics Engineer
-
-
----
-
-
-
----
-
-## 🚀 Quick Start
-
-```bash
-# One-liner for dev:
-dagster dev & streamlit run glucose_dashboard/app.py
-```
-
----
-
-##
+## Author
+Kyle Jamieson – Data Analyst / Analytics Engineer
