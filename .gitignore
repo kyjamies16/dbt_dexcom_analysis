@@ -43,3 +43,7 @@ __pycache__/
 *.db
 
 *.parquet
+.vscode/
+
+profiles/.user.yml
+

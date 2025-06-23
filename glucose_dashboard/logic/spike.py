@@ -86,6 +86,9 @@ def find_spike_events(df, roc_threshold=30, normal_threshold=140, max_duration_m
     # ---------------------------------------------
     spikes_df = pd.DataFrame(all_spikes)
     if not spikes_df.empty:
-        spikes_df = spikes_df[spikes_df["duration_min"] <= max_duration_min]
-
+        spikes_df = spikes_df[
+        (spikes_df["duration_min"] <= max_duration_min)
+        & (spikes_df["duration_min"] > 3)
+        & (spikes_df["peak_glucose"] >= 150)
+    ]
     return spikes_df
