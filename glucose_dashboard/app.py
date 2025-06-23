@@ -1,11 +1,13 @@
 import streamlit as st
-import datetime
+from datetime import timedelta, datetime
 import charts
 import logic 
 from utils.load_env import load_root_env
 from utils.formatting import format_pretty_date
 from data.load_data import load_glucose_data
 from config import settings
+import pytz
+
 
 # Load environment variables and set up paths
 load_root_env()
@@ -21,8 +23,12 @@ raw_df = load_glucose_data()
 start_date, end_date, range_label = logic.get_date_range_selector(raw_df)
 
 # --- Adjust adjusted_end_date to max out at yesterday ---
-today = datetime.date.today()
-yesterday = today - datetime.timedelta(days=1)
+central = pytz.timezone("US/Central")
+now_central = datetime.now(central)
+today = now_central.date()
+yesterday = today - timedelta(days=1)
+
+last_reading_ts = raw_df["reading_timestamp"].max()
 
 # Use the earlier of (adjusted_end_date from selector) or yesterday
 adjusted_end_date = min(end_date, yesterday)
