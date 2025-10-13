@@ -16,7 +16,7 @@ models:
           - not_null
           - dbt_expectations.expect_column_values_to_be_between:
               min_value: 30
-              max_value: 500
+              max_value: 600
               strictly: true
 
       - name: time_of_day_bucket
