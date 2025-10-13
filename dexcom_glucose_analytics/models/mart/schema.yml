@@ -18,6 +18,7 @@ models:
               min_value: 30
               max_value: 600
               strictly: true
+              severity: warn 
 
       - name: time_of_day_bucket
         description: Morning, Afternoon, Evening, Night
